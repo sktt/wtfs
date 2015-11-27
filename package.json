@@ -1,0 +1,33 @@
+{
+  "name": "3dish",
+  "version": "0.1.0",
+  "description": "yea workbnnnch",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "start": "./node_modules/.bin/webpack-dev-server --hot"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-core": "^6.4.5",
+    "babel-loader": "^6.2.1",
+    "babel-plugin-syntax-flow": "^6.3.13",
+    "babel-plugin-transform-flow-strip-types": "^6.4.0",
+    "babel-plugin-typecheck": "^3.6.1",
+    "babel-preset-react": "^6.3.13",
+    "babel-preset-react-hmre": "^1.0.1",
+    "css-loader": "^0.23.1",
+    "json-loader": "^0.5.4",
+    "node-sass": "^3.3.2",
+    "sass-loader": "^3.1.2",
+    "style-loader": "^0.13.0",
+    "webpack": "^1.12.12",
+    "webpack-dev-server": "^1.14.1"
+  },
+  "dependencies": {
+    "pixi.js": "^3.0.8",
+    "rx": "^4.0.7",
+    "rx-dom": "^7.0.3"
+  }
+}
