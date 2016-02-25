@@ -1,5 +1,5 @@
 import Animation from './animation'
-import {Vec2} from './algebra'
+import {Vec2} from '../algebra'
 
 export default class Character {
   moveQueue: Vec2[];

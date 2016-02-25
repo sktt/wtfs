@@ -1,4 +1,4 @@
-import {Vec2} from './algebra'
+import {Vec2} from '../algebra'
 export default class Camera {
   moveTarget: ?Vec2;
   constructor(world) {

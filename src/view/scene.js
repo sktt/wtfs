@@ -1,11 +1,12 @@
 /* @flow */
 import PIXI from 'pixi.js'
-import {dijkstra, VisibilityGraph, Node} from './graph'
-import {Polygon, Vec2, Line2} from './algebra'
-import IA from './ia'
-import earcut from 'earcut'
+import {VisibilityGraph, Node} from '../graph'
+import {Polygon, Vec2, Line2} from '../algebra'
+import IA from '../ia'
 import Character from './character'
 import Camera from './camera'
+import WalkableArea from './walkable_area'
+import WalkbehindArea from './walkbehind_area'
 
 function makeMainChar(resources, data) {
   const mainCharBase = resources[data.spritesheet.asset].texture
@@ -28,65 +29,6 @@ function makeMainChar(resources, data) {
   mainCharSpr.scale.set(data.scale)
   mainCharSpr.anchor.set(0.5, 1)
   return new Character(mainCharSpr, mainCharAnims)
-}
-
-function drawPolygon(poly :Polygon, g: PIXI.Graphics) {
-  let points = poly.flat()
-  let holeIndeces = []
-  poly.interior.forEach(hole => {
-    holeIndeces = holeIndeces.concat(points.length/2)
-    points = points.concat(hole.flat())
-  })
-  const tris = earcut(points, holeIndeces)
-  for(let i = 0; i < tris.length/3; i++) {
-    g.moveTo(points[tris[i * 3] * 2], points[tris[i * 3] * 2 + 1])
-    g.lineTo(points[tris[i * 3 + 1] * 2], points[tris[i * 3 + 1] * 2 + 1])
-    g.lineTo(points[tris[i * 3 + 2] * 2], points[tris[i * 3 + 2] * 2 + 1])
-  }
-  return g
-}
-
-class WalkableArea {
-  constructor(polygon) {
-    // Surrounding the walkable area
-    this.polygon = polygon
-    // Visibilty graph to navigate
-    this.visGraph = VisibilityGraph.fromPolygon(this.polygon)
-  }
-
-  draw(graphics) {
-    graphics.drawPolygon(this.polygon.flat())
-    return graphics
-  }
-
-  findPath(from, to) {
-    if (!(this.polygon.contains(from.pos) && this.polygon.contains(to.pos))) {
-      console.error(`Shit data: ${from.pos.x},${from.pos.y} ${to.pos.x},${to.pos.y}`)
-      return []
-    }
-
-    this.visGraph.connectNode(from)
-    this.visGraph.connectNode(to)
-
-    const path = dijkstra(from, to)
-
-    this.visGraph.unlinkNode(from)
-    this.visGraph.unlinkNode(to)
-
-    return path
-  }
-}
-
-class WalkbehindArea {
-  constructor(bg, polygon) {
-    this.spr = new PIXI.extras.TilingSprite(bg.texture, bg.width, bg.height)
-    this.spr.tileScale = bg.tileScale || bg.scale
-    this.graphics = new PIXI.Graphics()
-    this.graphics.beginFill()
-    drawPolygon(polygon, this.graphics)
-    this.graphics.endFill()
-    this.spr.mask = this.graphics
-  }
 }
 
 export default class Scene {
@@ -156,8 +98,9 @@ export default class Scene {
       const ps = this.walkable.polygon.points
 
       const toPos = this.walkable.polygon.nearestInside(new Vec2(x, y))
+      toPos.x = Math.round(toPos.x)
+      toPos.y = Math.round(toPos.y)
       const fromPos = this.walkable.polygon.nearestInside(this.mainChar.pos())
-
       const walkPath = this.walkable.findPath(
         new Node(fromPos),
         new Node(toPos)
@@ -178,12 +121,20 @@ export default class Scene {
       }
     })
 
+    bgInteraction.addListener('mousemove', (e) => {
+      const click = e.getPos(this.world)
+      const x = Math.floor(click.x)
+      const y = Math.floor(click.y)
+      console.log(x,y )
+    })
+
     // Dev, vis graph
     g = new PIXI.Graphics()
     g.lineStyle(1, 0x000000, 0.7)
     this.walkable.visGraph.draw(g)
     g.endFill()
     this.world.addChild(g)
+
   }
   update(dt) {
     this.mainChar.update(dt)

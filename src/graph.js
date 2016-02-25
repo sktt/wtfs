@@ -136,9 +136,10 @@ export class VisibilityGraph {
   // private
   _connect(nodes, n1) {
     const polygonLines = this.polygon.sides()
+    console.log(n1)
     nodes
       .map(n2 => [new Line2(n1.pos, n2.pos), n2])
-      .filter(([l1, _]) => !polygonLines.some(l2 => l2.intersects(l1)))
+      .filter(([l1, n]) => !polygonLines.some(l2 => l2.intersects(l1)))
       .filter(([l1, _]) => this.polygon.contains(l1.centerPoint()))
       .forEach(([_, n2]) => this.linkNodes(n1, n2))
   }
