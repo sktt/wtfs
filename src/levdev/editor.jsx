@@ -69,6 +69,7 @@ export default React.createClass({
         step="0.1"
         type="range"
         defaultValue={this.props.data.bg.scale} />
+      <button onClick={this.handleClickSave}>Save</button>
     </div>
   },
 
@@ -87,6 +88,10 @@ export default React.createClass({
     const d = this.props.data
     d.world.pos[1] = -e.target.value
     emitter.emit('u_state', d)
+  },
+  handleClickSave(e) {
+    const d = this.props.data
+    localStorage.setItem('3dsh:last_state', JSON.stringify(d))
   }
 })
 
