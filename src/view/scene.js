@@ -84,49 +84,6 @@ export default class Scene {
     this.camera = new Camera(this.world)
     this.stage.addChild(this.camera.container)
 
-    // set up listeners
-    const bgInteraction = new IA(this.background)
-
-    const devWalkPath = new PIXI.Graphics()
-    this.world.addChild(devWalkPath)
-
-    bgInteraction.addListener('mousedown', (e) => {
-      const click = e.getPos(this.world)
-      const x = Math.floor(click.x)
-      const y = Math.floor(click.y)
-      const mousePos = new Vec2(x, y)
-      const ps = this.walkable.polygon.points
-
-      const toPos = this.walkable.polygon.nearestInside(new Vec2(x, y))
-      toPos.x = Math.round(toPos.x)
-      toPos.y = Math.round(toPos.y)
-      const fromPos = this.walkable.polygon.nearestInside(this.mainChar.pos())
-      const walkPath = this.walkable.findPath(
-        new Node(fromPos),
-        new Node(toPos)
-      )
-
-      this.mainChar.moveQueue = walkPath.slice(1).map(n => n.pos)
-      this.mainChar.moveTarget = null
-
-      // Dev
-      if (walkPath.length) {
-        let way = walkPath
-        devWalkPath.clear()
-        devWalkPath.lineStyle(2, 0xff0000, 1)
-        for(let i = 0; i < way.length-1; i ++ ) {
-          devWalkPath.moveTo(way[i].pos.x, way[i].pos.y)
-          devWalkPath.lineTo(way[i+1].pos.x, way[i+1].pos.y)
-        }
-      }
-    })
-
-    bgInteraction.addListener('mousemove', (e) => {
-      const click = e.getPos(this.world)
-      const x = Math.floor(click.x)
-      const y = Math.floor(click.y)
-      console.log(x,y )
-    })
 
     // Dev, vis graph
     g = new PIXI.Graphics()
@@ -141,5 +98,59 @@ export default class Scene {
   }
   scale ([x, y]) {
     this.camera.container.scale.set(Math.min(1, Math.min(x / this.size.x, y / this.size.y)))
+  }
+  initListeners() {
+    if (this.unsubscribers && this.unsubscribers.length) {
+      this.unsubscribers.forEach((unsub) => unsub())
+    }
+    this.unsubscribers = []
+
+    // set up listeners
+    const bgInteraction = new IA(this.background)
+
+    this.devWalkPath = new PIXI.Graphics()
+    this.world.addChild(this.devWalkPath)
+
+    // addListener returns an unsubscribe function
+    this.unsubscribers.push(bgInteraction.addListener('mousedown', this.handleMouseDown))
+    this.unsubscribers.push(bgInteraction.addListener('mousemove', this.handleMouseMove))
+  }
+
+  handleMouseDown(e) {
+    const click = e.getPos(this.world)
+    const x = Math.floor(click.x)
+    const y = Math.floor(click.y)
+    const mousePos = new Vec2(x, y)
+    const ps = this.walkable.polygon.points
+
+    const toPos = this.walkable.polygon.nearestInside(new Vec2(x, y))
+    toPos.x = Math.round(toPos.x)
+    toPos.y = Math.round(toPos.y)
+    const fromPos = this.walkable.polygon.nearestInside(this.mainChar.pos())
+    const walkPath = this.walkable.findPath(
+      new Node(fromPos),
+      new Node(toPos)
+    )
+
+    this.mainChar.moveQueue = walkPath.slice(1).map(n => n.pos)
+    this.mainChar.moveTarget = null
+
+    // Dev
+    if (walkPath.length) {
+      let way = walkPath
+      this.devWalkPath.clear()
+      this.devWalkPath.lineStyle(2, 0xff0000, 1)
+      for(let i = 0; i < way.length-1; i ++ ) {
+        this.devWalkPath.moveTo(way[i].pos.x, way[i].pos.y)
+        this.devWalkPath.lineTo(way[i+1].pos.x, way[i+1].pos.y)
+      }
+    }
+  }
+
+  handleMouseMove(e) {
+    const click = e.getPos(this.world)
+    const x = Math.floor(click.x)
+    const y = Math.floor(click.y)
+    console.log(x,y)
   }
 }

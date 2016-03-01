@@ -7,7 +7,7 @@ import config from '../config'
 
 import Scene from './scene'
 
-export default function(sceneData) {
+export default (sceneData) => {
   document.body.style.backgroundColor = '#000'
   document.body.style.display = 'flex'
   document.body.style.justifyContent = 'center'
@@ -41,6 +41,7 @@ export default function(sceneData) {
   let myScene = null
   obsScene.subscribe(scene => {
     myScene = scene
+    scene.initListeners()
   })
 
   Rx.Observable
