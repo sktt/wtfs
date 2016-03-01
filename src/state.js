@@ -85,6 +85,10 @@ const DEFAULT_STATE = {
   }
 }
 
+if(!localStorage.getItem('3dsh:last_state')) {
+  localStorage.setItem('3dsh:last_state', JSON.serialize(DEFAULT_STATE))
+}
+
 export default Rx.Observable
-  .just(DEFAULT_STATE)
+  .just(JSON.parse(localStorage.getItem('3dsh:last_state')))
   .merge(Rx.Observable.fromEvent(emitter, 'u_state'))

@@ -23,10 +23,6 @@ export default (sceneData) => {
   const obsResources = Rx.Observable
     .fromCallback(l.load, l, (_, resources) => resources)()
 
-  obsRenderer.subscribe(renderer => {
-    document.body.appendChild(renderer.view)
-  })
-
   const obsResize = Rx.Observable
     .merge(
       Rx.Observable.just(),
@@ -34,6 +30,13 @@ export default (sceneData) => {
     )
     .map(() => [window.innerWidth, window.innerHeight])
 
+  obsRenderer.subscribe(renderer => {
+    document.body.appendChild(renderer.view)
+    console.log(renderer.view)
+    obsResize.subscribe(([x, y]) => {
+      renderer.view.style.height = `${config.size.y * (x / config.size.x)}px`
+    })
+  })
 
   const obsScene = obsResources
     .map(resources => new Scene(resources, config.size, sceneData))
@@ -48,7 +51,6 @@ export default (sceneData) => {
     .combineLatest(obsRenderer, obsTick, obsResize)
     .subscribe(([renderer, dt, dims]) => {
       if(myScene) {
-        myScene.scale(dims)
         myScene.update(dt)
         renderer.render(myScene.stage)
       }
