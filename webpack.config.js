@@ -7,14 +7,21 @@ const SRC_PATH = path.join(__dirname, 'src')
 module.exports = {
   devtool: 'source-map',
   cache: 'true',
-  entry: [
-    'webpack-dev-server/client?http://localhost:8080',
-    'webpack/hot/dev-server',
-    `${SRC_PATH}/main.js`
-  ],
+  entry: {
+    main: [
+      'webpack-dev-server/client?http://localhost:8080',
+      'webpack/hot/dev-server',
+      `${SRC_PATH}/main.js`,
+    ],
+    levdev: [
+      'webpack-dev-server/client?http://localhost:8080',
+      'webpack/hot/dev-server',
+      `${SRC_PATH}/levdev/main.js`
+    ]
+  },
   output: {
     path: DIST_PATH,
-    filename: 'main.js'
+    filename: '[name].js'
     //publicPath: '/static/'
   },
   target: 'web',
