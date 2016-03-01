@@ -96,9 +96,6 @@ export default class Scene {
   update(dt) {
     this.mainChar.update(dt)
   }
-  scale ([x, y]) {
-    this.camera.container.scale.set(Math.min(1, Math.min(x / this.size.x, y / this.size.y)))
-  }
   initListeners() {
     if (this.unsubscribers && this.unsubscribers.length) {
       this.unsubscribers.forEach((unsub) => unsub())
@@ -112,8 +109,8 @@ export default class Scene {
     this.world.addChild(this.devWalkPath)
 
     // addListener returns an unsubscribe function
-    this.unsubscribers.push(bgInteraction.addListener('mousedown', this.handleMouseDown))
-    this.unsubscribers.push(bgInteraction.addListener('mousemove', this.handleMouseMove))
+    this.unsubscribers.push(bgInteraction.addListener('mousedown', ::this.handleMouseDown))
+    this.unsubscribers.push(bgInteraction.addListener('mousemove', ::this.handleMouseMove))
   }
 
   handleMouseDown(e) {
