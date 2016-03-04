@@ -1,7 +1,7 @@
 import Rx from 'rx-dom'
 import PIXI from 'pixi.js'
 
-import {obsRenderer, rootDOMNode} from '../renderer'
+import obsRenderer from '../renderer'
 import obsTick from '../ticker'
 import config from '../config'
 
@@ -32,7 +32,6 @@ export default (sceneData) => {
 
   obsRenderer.subscribe(renderer => {
     document.body.appendChild(renderer.view)
-    console.log(renderer.view)
     obsResize.subscribe(([x, y]) => {
       renderer.view.style.height = `${config.size.y * (x / config.size.x)}px`
     })
