@@ -1,6 +1,5 @@
 /*@flow*/
 import Rx from 'rx-dom'
-import {rootDOMNode} from './renderer'
 
 const toSyntheticEvent = function(e) {
   const root = e.target;
@@ -17,17 +16,40 @@ const toSyntheticEvent = function(e) {
   }
 }
 
-const mousedown = rootDOMNode
-  .flatMap((view) => Rx.DOM.mousedown(view))
-  .map(toSyntheticEvent)
-
-const mousemove = rootDOMNode
-  .flatMap((view) => Rx.DOM.mousemove(view))
-  .map(toSyntheticEvent)
+var rootDOMNode = Rx.Observable.create(observer => {
+  const c = document.querySelector('canvas')
+  if(c) {
+    observer.onNext(c)
+  } else {
+    observer.onError(new Error('not entered'))
+  }
+  observer.onCompleted()
+  return () => console.log('unsub')
+})
+.catch(
+  _ => Rx.DOM.fromMutationObserver(document.body, {
+    attributes: true,
+    childList: true,
+    characterData: true,
+  }).map(
+    records => records.reduce(
+      (acc, el) => acc || el.addedNodes && Array.prototype.concat.apply([], el.addedNodes).find(
+        (el) => el.nodeName === 'CANVAS'
+      ), null
+    )
+  )
+)
+.filter(x => x)
+.take(1)
 
 const obs = {
-  mousedown,
-  mousemove
+  mousedown: rootDOMNode.flatMap(
+    (view) => Rx.DOM.mousedown(view)
+  ).map(toSyntheticEvent),
+
+  mousemove: rootDOMNode.flatMap(
+    (view) => Rx.DOM.mousemove(view)
+  ).map(toSyntheticEvent)
 }
 
 export default class IM {
@@ -48,7 +70,7 @@ export default class IM {
         }
       })
       .map((e) => {
-        // like root container..
+        // getPos relative to dispObj
         e.getPos = (dispObj) => dispObj
           .worldTransform
           .applyInverse({
