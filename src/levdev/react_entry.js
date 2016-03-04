@@ -9,14 +9,19 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import Editor from './editor'
 
+const obsResize = Rx.Observable.merge(
+  Rx.Observable.just(),
+  Rx.Observable.fromEvent(window, 'resize')
+)
+.map(() => [window.innerWidth, window.innerHeight])
+
 export default (sceneData) => {
   document.body.style.backgroundColor = '#000'
   document.body.style.height = '100%'
   document.body.style.margin = '0'
   document.body.parentNode.style.height = '100%'
 
-  const l = PIXI.loader
-  l.reset()
+  const l = new PIXI.loaders.Loader()
   Object.keys(sceneData.assets).forEach(
     key => l.add(key, sceneData.assets[key])
   )
@@ -24,16 +29,8 @@ export default (sceneData) => {
   const obsResources = Rx.Observable
     .fromCallback(l.load, l, (_, resources) => resources)()
 
-  const obsResize = Rx.Observable
-    .merge(
-      Rx.Observable.just(),
-      Rx.Observable.fromEvent(window, 'resize')
-    )
-    .map(() => [window.innerWidth, window.innerHeight])
-
   const obsScene = obsResources
     .map(resources => new Scene(resources, config.size, sceneData))
-    //.flatMap((scene) => Rx.Observable.fromEvent(viewEvents, ''))
 
   Rx.Observable
     .combineLatest(obsScene, obsResize)
