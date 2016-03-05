@@ -113,7 +113,6 @@ export class Polygon {
   points: Vec2[];
   constructor(points) {
     this.points = points
-
     this.interior = [] // holes
   }
 
@@ -140,9 +139,8 @@ export class Polygon {
     return this.points.reduce((acc, el) => acc.concat([el.x, el.y]), [])
   }
 
-  contains(point): boolean {
-    // Strange behaviour: vertex counts as inside, on the line
-    // between does not..?
+  contains(point: Vec2): boolean {
+    // todo: tolerance
     return (PIXI.Polygon.prototype.contains.apply({
       points: this.flat()
     }, [point.x, point.y]) || this.points.some(p => p.equals(point))) &&
@@ -150,16 +148,19 @@ export class Polygon {
       !this.interior.some(hole => hole.contains(point))
   }
 
-  nearestInside(point): Vec2 {
-    if(this.contains(point)) return point
+  // todo: weird return type
+  nearestInside(point: Vec2): [Vec2, number] {
+    if(this.contains(point)) return [point, -1]
 
     let nearest = Vec2.INF
+    let neighbourIndex = -1
     this.points.forEach((p1, i, ps) => {
       const p2 = ps[(i+1) % ps.length]
       const near = new Line2(p1, p2).closestTo(point.sub(p1))
-      nearest = near.dist(point) < nearest.dist(point)
-        ? near
-        : nearest
+      if(near.dist(point) < nearest.dist(point)) {
+        nearest = near
+        neighbourIndex = i
+      }
     })
 
     const dir = new Line2(point, nearest).dir()
@@ -174,6 +175,7 @@ export class Polygon {
       }
       nearest = nearest.add(dir)
     }
-    return nearest
+
+    return [nearest, neighbourIndex]
   }
 }
