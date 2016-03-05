@@ -89,7 +89,8 @@ export class Line2 {
     const s = (-s1y * (this.a.x - l2.a.x) + s1x * (this.a.y - l2.a.y)) / (-s2x * s1y + s1x * s2y)
     const t = ( s2x * (this.a.y - l2.a.y) - s2y * (this.a.x - l2.a.x)) / (-s2x * s1y + s1x * s2y)
 
-    return (0 < s && s < 1) && (0 < t && t < 1)
+    const eps = 0.00001
+    return (0 < (s - eps) && (s + eps) < 1) && (0 < (t - eps) && (t + eps) < 1)
   }
 
   closestTo(x)  {
