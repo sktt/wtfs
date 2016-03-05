@@ -121,12 +121,7 @@ export default class Scene {
     const ps = this.walkable.polygon.points
 
     const toPos = this.walkable.polygon.nearestInside(new Vec2(x, y))[0]
-    // todo pointless rounding
-    toPos.x = Math.round(toPos.x)
-    toPos.y = Math.round(toPos.y)
     const fromPos = this.walkable.polygon.nearestInside(this.mainChar.pos())[0]
-    fromPos.x = Math.round(fromPos.x)
-    fromPos.y = Math.round(fromPos.y)
     const walkPath = this.walkable.findPath(
       new Node(fromPos),
       new Node(toPos)
