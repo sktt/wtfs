@@ -132,7 +132,6 @@ export class Polygon {
   containsPolygon(poly) {
     // this polygon contains `poly` when all of polys vertices are
     // interior of this
-    // // untested
     return poly.points.every((vert) => this.contains(vert))
   }
 
@@ -140,13 +139,46 @@ export class Polygon {
     return this.points.reduce((acc, el) => acc.concat([el.x, el.y]), [])
   }
 
-  contains(point: Vec2): boolean {
-    // todo: tolerance
-    return (PIXI.Polygon.prototype.contains.apply({
-      points: this.flat()
-    }, [point.x, point.y]) || this.points.some(p => p.equals(point))) &&
-      // untested  ..
-      !this.interior.some(hole => hole.contains(point))
+  contains(test: Vec2): boolean {
+    const EPS = 0.1
+
+    // picked up at http://gamedev.stackexchange.com/questions/31741/adding-tolerance-to-a-point-in-polygon-test
+    let oldPoint = this.points[this.points.length - 1]
+    let oldSqDist = oldPoint.distSq(test)
+    let inside = false
+
+    let left = null
+    let right = null
+
+    for (let i=0 ; i < this.points.length; i++) {
+      let newPoint = this.points[i]
+      let newSqDist = newPoint.distSq(test)
+
+      if (oldSqDist + newSqDist + 2 * Math.sqrt(oldSqDist * newSqDist) -
+          newPoint.distSq(oldPoint) < EPS) {
+        return true
+      }
+
+      if (newPoint.x > oldPoint.x) {
+        left = oldPoint
+        right = newPoint
+      } else {
+        left = newPoint
+        right = oldPoint
+      }
+
+      if ((newPoint.x < test.x) == (test.x <= oldPoint.x)
+          && (test.y-left.y) * (right.x-left.x)
+          < (right.y-left.y) * (test.x-left.x) ) {
+        inside = !inside
+      }
+
+      oldPoint = newPoint
+      oldSqDist = newSqDist
+    }
+
+    return inside || this.points.some(p => p.equals(test)) &&
+      !this.interior.some(hole => hole.contains(test))
   }
 
   // todo: weird return type
@@ -163,19 +195,6 @@ export class Polygon {
         neighbourIndex = i
       }
     })
-
-    const dir = new Line2(point, nearest).dir()
-
-    // Adjust making sure its inside.. because floats
-    for(let i = 0; i < 100; i ++) {
-      if (this.contains(nearest)) {
-        break
-      }
-      if (i > 100) {
-        throw Error('OMG WTF')
-      }
-      nearest = nearest.add(dir)
-    }
 
     return [nearest, neighbourIndex]
   }
