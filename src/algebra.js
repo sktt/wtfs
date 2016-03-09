@@ -7,42 +7,42 @@ export class Vec2 {
     this.y = y
   }
 
-  arr() {
+  arr(): number[] {
     return [this.x, this.y]
   }
 
-  distSq(v) {
+  distSq(v): number {
     const dx = v.x - this.x
     const dy = v.y - this.y
     return dx * dx + dy * dy
   }
 
-  dist(v) {
+  dist(v): number {
     return Math.sqrt(this.distSq(v))
   }
 
-  len() {
+  len(): number {
     return this.dist(Vec2.ORIGO)
   }
 
-  norm() {
+  norm(): Vec2 {
     const l = this.len()
     return new Vec2(this.x/l, this.y/l)
   }
 
-  dot(v) {
+  dot(v): number {
     return this.x * v.x + this.y * v.y
   }
 
-  scale(m) {
+  scale(m): Vec2 {
     return new Vec2(this.x * m, this.y * m)
   }
 
-  add(v) {
+  add(v): Vec2 {
     return new Vec2(this.x + v.x, this.y + v.y)
   }
 
-  sub(v) {
+  sub(v): Vec2 {
     return this.add(v.scale(-1))
   }
 
@@ -51,8 +51,8 @@ export class Vec2 {
       this.x === o.x && this.y === o.y
   }
 
-  clone() {
-    return new Vec2(this.x, this.y)
+  static fromArray([x: number, y: number]): Vec2 {
+    return new Vec2(x, y)
   }
 }
 
@@ -63,24 +63,27 @@ Vec2.INF = new Vec2(Infinity, Infinity)
 export class Line2 {
   a: Vec2;
   b: Vec2;
-  constructor(a, b){
+  constructor(a, b) {
     this.a = a
     this.b = b
   }
+  equals(o): boolean {
+    return this === o || (this.a.equals(o.a) && this.b.equals(o.b))
+  }
 
-  centerPoint() {
+  centerPoint(): Vec2 {
     return this.a.add(this.b).scale(0.5)
   }
 
-  dir() {
+  dir(): Vec2 {
     return this.b.sub(this.a).norm()
   }
 
-  len() {
+  len(): number {
     return this.a.dist(this.b)
   }
 
-  intersects(l2) {
+  intersects(l2): boolean {
     const s1x = this.b.x - this.a.x
     const s1y = this.b.y - this.a.y
     const s2x = l2.b.x - l2.a.x
@@ -93,7 +96,7 @@ export class Line2 {
     return (0 < (s - eps) && (s + eps) < 1) && (0 < (t - eps) && (t + eps) < 1)
   }
 
-  closestTo(x)  {
+  closestTo(x): Vec2 {
     const v = this.dir()
     const s = x.dot(v) / v.dot(v)
     const l = this.len()
@@ -122,21 +125,34 @@ export class Polygon {
   }
 
   addHole(polygon) {
+    if (polygon.points.length < 2) {
+      // a polygon should be polygon
+      console.error('not adding', polygon)
+      // throw some day
+      return
+    }
     if(!this.containsPolygon(polygon)) {
       throw Error('Trying to add interior polygon that is not contained in this')
     }
+
 
     this.interior = this.interior.concat(polygon)
   }
 
   containsPolygon(poly) {
-    // this polygon contains `poly` when all of polys vertices are
-    // interior of this
-    return poly.points.every((vert) => this.contains(vert))
+    // this polygon contains `poly` when no side intersects with this and
+    // one of `poly`s vertices are interior of this
+    return !this.intersectsPoly(poly) && this.contains(poly.points[2])
   }
 
-  flat(): number[] {
-    return this.points.reduce((acc, el) => acc.concat([el.x, el.y]), [])
+  intersectsPoly(poly) {
+    return poly.sides().some(
+      l1 => this.sides().some(
+        l2 => l1.intersects(l2)
+      )
+    ) || this.interior.some(
+      hole => hole.intersectsPoly(poly)
+    )
   }
 
   contains(test: Vec2): boolean {
@@ -177,7 +193,7 @@ export class Polygon {
       oldSqDist = newSqDist
     }
 
-    return inside || this.points.some(p => p.equals(test)) &&
+    return (inside || this.points.some(p => p.equals(test))) &&
       !this.interior.some(hole => hole.contains(test))
   }
 
