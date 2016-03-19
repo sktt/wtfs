@@ -126,15 +126,11 @@ export class Polygon {
 
   addHole(polygon) {
     if (polygon.points.length < 2) {
-      // a polygon should be polygon
-      console.error('not adding', polygon)
-      // throw some day
-      return
+      throw Error('Not a polygon')
     }
     if(!this.containsPolygon(polygon)) {
       throw Error('Trying to add interior polygon that is not contained in this')
     }
-
 
     this.interior = this.interior.concat(polygon)
   }
