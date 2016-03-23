@@ -1,28 +1,24 @@
 /*@flow*/
 import {Polygon, Vec2, Line2} from './algebra'
 
-export function dijkstra(start, end) {
-  const heuristic = (a, b) => a.pos.dist(b.pos)
+export function dijkstra(start: Node, end: Node): Node[] {
+  const heuristic = (a: Node, b: Node): number => a.pos.dist(b.pos)
 
-  let closedSet = []
-  let openSet = [start]
+  let closedSet: Node[] = []
+  let openSet: Node[] = [start]
 
-  const cameFrom = new Map()
+  const cameFrom: Map<Node,number> = new Map()
 
   // Lowest known cost to key
-  const gScore = new Map([[start, 0]])
+  const gScore: Map<Node, number> = new Map([[start, 0]])
 
   // Estimated total cost to end from key
-  const fScore = new Map([[start, heuristic(start, end)]])
+  const fScore: Map<Node, number> = new Map([[start, heuristic(start, end)]])
 
-  // Default to Infinity for undefined keys
-  gScore.get = (key) => gScore.has(key)
-    ? Map.prototype.get.call(gScore, key)
-    : Infinity
+  //Default to Infinity for undefined keys
+  gScore.get = (key: Node): number => gScore.has(key) ? Map.prototype.get.call(gScore, key) : Infinity
 
-  fScore.get = (key) => fScore.has(key)
-    ? Map.prototype.get.call(fScore, key)
-    : Infinity
+  fScore.get = (key: Node): number => fScore.has(key) ? Map.prototype.get.call(fScore, key) : Infinity
 
   while (openSet.length > 0) {
     let current = openSet.shift()

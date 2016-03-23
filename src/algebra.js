@@ -2,7 +2,7 @@
 export class Vec2 {
   x: number;
   y: number;
-  constructor(x, y) {
+  constructor(x: number, y: number) {
     this.x = x
     this.y = y
   }
@@ -11,13 +11,13 @@ export class Vec2 {
     return [this.x, this.y]
   }
 
-  distSq(v): number {
+  distSq(v: Vec2): number {
     const dx = v.x - this.x
     const dy = v.y - this.y
     return dx * dx + dy * dy
   }
 
-  dist(v): number {
+  dist(v: Vec2): number {
     return Math.sqrt(this.distSq(v))
   }
 
@@ -30,34 +30,37 @@ export class Vec2 {
     return new Vec2(this.x/l, this.y/l)
   }
 
-  dot(v): number {
+  dot(v: Vec2): number {
     return this.x * v.x + this.y * v.y
   }
 
-  scale(m): Vec2 {
+  scale(m: number): Vec2 {
     return new Vec2(this.x * m, this.y * m)
   }
 
-  add(v): Vec2 {
+  add(v: Vec2): Vec2 {
     return new Vec2(this.x + v.x, this.y + v.y)
   }
 
-  sub(v): Vec2 {
+  sub(v: Vec2): Vec2 {
     return this.add(v.scale(-1))
   }
 
-  equals(o): boolean {
+  equals(o: any): boolean {
     return this === o ||
       this.x === o.x && this.y === o.y
   }
 
-  static fromArray([x: number, y: number]): Vec2 {
-    return new Vec2(x, y)
+  static fromArray(p: number[]): Vec2 {
+    return new Vec2(p[0], p[1])
   }
+
+  static ORIGO = new Vec2(0, 0)
+
+  static INF = new Vec2(Infinity, Infinity)
 }
 
-Vec2.ORIGO = new Vec2(0, 0)
-Vec2.INF = new Vec2(Infinity, Infinity)
+
 
 // line ina twod space
 export class Line2 {
@@ -67,7 +70,7 @@ export class Line2 {
     this.a = a
     this.b = b
   }
-  equals(o): boolean {
+  equals(o: any): boolean {
     return this === o || (this.a.equals(o.a) && this.b.equals(o.b))
   }
 
@@ -83,7 +86,7 @@ export class Line2 {
     return this.a.dist(this.b)
   }
 
-  intersects(l2): boolean {
+  intersects(l2: Line2): boolean {
     const s1x = this.b.x - this.a.x
     const s1y = this.b.y - this.a.y
     const s2x = l2.b.x - l2.a.x
@@ -96,7 +99,8 @@ export class Line2 {
     return (0 < (s - eps) && (s + eps) < 1) && (0 < (t - eps) && (t + eps) < 1)
   }
 
-  closestTo(x): Vec2 {
+  // Point on this line closest to x
+  closestTo(x: Vec2): Vec2 {
     const v = this.dir()
     const s = x.dot(v) / v.dot(v)
     const l = this.len()
@@ -124,7 +128,7 @@ export class Polygon {
     return this.points.map((p1, i, ps) => new Line2(p1, ps[(i+1) % ps.length]))
   }
 
-  addHole(polygon) {
+  addHole(polygon: Polygon): void {
     if (polygon.points.length < 2) {
       throw Error('Not a polygon')
     }
@@ -135,13 +139,13 @@ export class Polygon {
     this.interior = this.interior.concat(polygon)
   }
 
-  containsPolygon(poly) {
+  containsPolygon(poly: Polygon): boolean {
     // this polygon contains `poly` when no side intersects with this and
     // one of `poly`s vertices are interior of this
-    return !this.intersectsPoly(poly) && this.contains(poly.points[2])
+    return this.contains(poly.points[0]) && !this.intersectsPoly(poly)
   }
 
-  intersectsPoly(poly) {
+  intersectsPoly(poly: Polygon): boolean {
     return poly.sides().some(
       l1 => this.sides().some(
         l2 => l1.intersects(l2)
@@ -193,6 +197,7 @@ export class Polygon {
       !this.interior.some(hole => hole.contains(test))
   }
 
+  // return the point in this polygon that is the nearest to to `point`
   // todo: weird return type
   nearestInside(point: Vec2): [Vec2, number] {
     if(this.contains(point)) return [point, -1]
