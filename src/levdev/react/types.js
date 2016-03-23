@@ -1,6 +1,11 @@
 import {PropTypes as T} from 'react'
 
-export const data = T.shape({
+const polygon = T.shape({
+  bounds: T.arrayOf(T.arrayOf(T.number)),
+  holes: T.arrayOf(T.arrayOf(T.arrayOf(T.number)))
+})
+
+const data = T.shape({
   world: T.shape({
     pos: T.arrayOf(
       T.number
@@ -14,6 +19,10 @@ export const data = T.shape({
     ])
   }),
 
-  walkable: T.arrayOf(T.arrayOf(T.number))
-}).isRequired
+  walkbehind: polygon,
+  walkable: polygon
+})
 
+export default  {
+  data, polygon
+}

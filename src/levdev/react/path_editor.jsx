@@ -1,16 +1,20 @@
+import T from './types'
 import React from 'react'
 import ReactDOM from 'react-dom'
-import {data} from './types'
 import emitter from '../../emitter'
-import {Polygon, Vec2} from '../../algebra'
+import {Line2, Polygon, Vec2} from '../../algebra'
+import PolygonTool from './path_editor/polygon_tool'
 
 export default class PathEditor extends React.Component {
   static propTypes = {
-    data
+    data: T.data.isRequired
   }
   static defaultProps = {
     data: {
-      walkable: []
+      walkable: {
+        bounds: [],
+        holes: []
+      }
     }
   }
   constructor() {
@@ -21,25 +25,21 @@ export default class PathEditor extends React.Component {
     }
   }
   componentWillMount() {
-    this.setState({
-      polygon: new Polygon(this.props.data.walkable.map(([x,y]) => new Vec2(x,y)))
-    })
+    this._makePolygon()
   }
-
   componentWillReceiveProps(props) {
-    this.setState({
-      polygon: new Polygon(this.props.data.walkable.map(([x,y]) => new Vec2(x,y)))
-    })
+    this._makePolygon(props)
   }
-
   render() {
-    const walkable = this.props.data.walkable
+    const bounds = this.props.data.walkable.bounds
     const bgScale = this.props.data.bg.scale
     const editorScale = this.props.editorScale
     const viewBox = `0 0 ${this.props.textureWidth * bgScale} ${this.props.textureHeight * bgScale}`
 
     const hoverIndex = this.state.hoverIndex
     const activeIndex = this.state.activeIndex
+    const previewHole = this.state.previewHole
+
     return (
       <svg
         style={{
@@ -51,99 +51,98 @@ export default class PathEditor extends React.Component {
           width: this.props.textureWidth * bgScale * editorScale,
           height: '100%',
         }}
-        viewBox={viewBox}
-        onMouseMove={::this.handleMouseMove}
-        onMouseUp={::this.handleAddPreviewed}
-      >
-        {walkable.length
-          ? <path
-              style={{stroke: 'red', fill: 'rgba(255, 0, 0, 0.5)'}}
-              d={`M${walkable[0][0]} ${walkable[0][1]}` +
-                  walkable.slice(1).map((d) => {
-                return 'L' + d[0] + " " + d[1]
-              }) + 'Z'}>
-            </path>
-          : null
-        }
-        {this.state.previewAdd
-          ? <circle cx={this.state.previewAdd[0].x} cy={this.state.previewAdd[0].y} r="15px" fill="rgba(0,0,0,0.5)"/>
-          : null
-        }
-        {walkable.length
-          ? walkable.map((d, i) => <circle
-            onMouseOver={this.handleMouseOver.bind(this, i)}
-            onMouseLeave={this.handleMouseLeave.bind(this, i)}
-            onMouseDown={this.handleMouseDown.bind(this, i)}
-            onMouseUp={this.handleMouseUp.bind(this, i)}
-            onContextMenu={this.handleRightClick.bind(this, i)}
-            key={i}
-            cx={d[0]}
-            cy={d[1]}
-            r="15px"
-            fill={this.state.activeIndex === i ? "#0f0" : this.state.hoverIndex === i ? "#00f" : "#000"}
-          />)
-          : null}
+        viewBox={viewBox} >
+        <PolygonTool
+          polygon={this.state.polygon}
+          editorScale={editorScale}/>
       </svg>
     )
   }
-  handleMouseMove(e) {
+  _makePolygon(props = this.props) {
+    const p = new Polygon(props.data.walkable.bounds.map(Vec2.fromArray))
+
+    props.data.walkable.holes.forEach(
+      h => p.addHole(new Polygon(h.map(Vec2.fromArray)))
+    )
+    this.setState({
+      polygon: p
+    })
+  }
+
+  handleRightClickCircle(i, e) {
+    const d = this.props.data
+    d.walkable.bounds = d.walkable.bounds.slice(0, i).concat(d.walkable.bounds.slice(i+1))
+    emitter.emit('u_state', d)
+    e.preventDefault()
+  }
+
+  handleMouseMoveWorld(e) {
     const editorScale = this.props.editorScale
-    const pos = [e.clientX/editorScale, e.clientY/editorScale]
-    if(this.state.activeIndex !== -1) {
+    const pos = [(window.scrollX + e.clientX)/editorScale, (window.scrollY + e.clientY)/editorScale]
+    const vecPos = new Vec2(pos[0], pos[1])
+
+    if (this.state.activeIndex !== -1) {
       const d = this.props.data
-      d.walkable[this.state.activeIndex] = pos
+      d.walkable.bounds[this.state.activeIndex] = pos
       emitter.emit('u_state', d)
       this.setState({
         previewAdd: null
       })
-    } else if (this.state.hoverIndex === -1){
+    } else if (this.state.hoverIndex === -1) {
       this.setState({
-        previewAdd: this.state.polygon.nearestInside(new Vec2(pos[0], pos[1]))
+        previewAdd: this.state.polygon.nearestInside(vecPos)
       })
     }
-  }
-  handleMouseOver(i)  {
-    this.setState({
-      hoverIndex: i,
-      previewAdd: null
-    })
-  }
-  handleMouseLeave(i)  {
-    if(this.state.hoverIndex === i) {
-      this.setState({
-        hoverIndex: -1
-      })
+
+    if(this.state.previewHole) {
+      const h = this.state.previewHole[0]
+      const holeRect = [h, [h[0], pos[1]], pos, [pos[0], h[1]]]
+      const holeRectPoly = new Polygon(holeRect.map(Vec2.fromArray))
+
+      if (this.state.polygon.containsPolygon(holeRectPoly)) {
+        this.setState({
+          previewHole: [h, [h[0], pos[1]], pos, [pos[0], h[1]]]
+        })
+      }
     }
   }
-  handleMouseUp(i)  {
-    this.setState({
-      activeIndex: -1
-    })
-  }
-  handleRightClick(i, e) {
-    const d = this.props.data
-    d.walkable = d.walkable.slice(0, i).concat(d.walkable.slice(i+1))
-    emitter.emit('u_state', d)
-    e.preventDefault()
-  }
-  handleAddPreviewed() {
+  handleMouseUpWorld(e) {
+    const editorScale = this.props.editorScale
+
     if (this.state.previewAdd) {
-      const d = this.props.data
-      const {x,y} = this.state.previewAdd[0]
-      const neighbourIndex = this.state.previewAdd[1]
-      d.walkable = d.walkable
-        .slice(0, neighbourIndex+1)
-        .concat([[Math.round(x), Math.round(y)]])
-        .concat(d.walkable.slice(neighbourIndex+1))
-      emitter.emit('u_state', d)
-    }
-  }
-  handleMouseDown(i, e)  {
-    if(e.nativeEvent.which === 1) {
-      // left click
-      this.setState({
-        activeIndex: i
-      })
+      const pos = [(window.scrollX + e.clientX)/editorScale, (window.scrollY + e.clientY)/editorScale]
+      if(this.state.polygon.contains(new Vec2(pos[0], pos[1]))) {
+        if(!this.state.previewHole) {
+          this.setState({
+            previewHole: [pos, pos, pos, pos]
+          })
+        } else {
+          const inside = this.state.polygon.containsPolygon(new Polygon(
+            this.state.previewHole.map(Vec2.fromArray)
+          ))
+          if(inside) {
+            const d = this.props.data
+            d.walkable.holes = d.walkable.holes.concat([this.state.previewHole])
+            this.setState({
+              previewHole: null
+            })
+            emitter.emit('u_state', d)
+          } else {
+            this.setState({
+              previewHole: null
+            })
+          }
+        }
+      } else {
+        const d = this.props.data
+        const {x,y} = this.state.previewAdd[0]
+        const neighbourIndex = this.state.previewAdd[1]
+        d.walkable.bounds = d.walkable.bounds
+          .slice(0, neighbourIndex+1)
+          .concat([[x, y]])
+          .concat(d.walkable.bounds.slice(neighbourIndex+1))
+        emitter.emit('u_state', d)
+      }
     }
   }
 }

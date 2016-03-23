@@ -1,47 +1,66 @@
+import T from './react/types'
+
 import config from '../config'
 import React from 'react'
 import emitter from '../emitter'
 import CameraEditor from './react/camera_editor'
 import PathEditor from './react/path_editor'
+import WorldEditor from './react/world_editor'
 
-import {data} from './react/types'
+const capitalize = (str) => String.fromCharCode(str.charCodeAt(0) - 32) + str.slice(1)
 
 export default class Editor extends React.Component {
   static propTypes = {
-    data,
+    data: T.data.isRequired,
     scene: React.PropTypes.object.isRequired
   }
+  static SCALE = 0.3
+
   constructor() {
     super()
     this.state = {
-      editFeature: 'camera'
+      currEditor: 'walkable',
+    }
+  }
+
+  editors = {
+    camera: _ => <CameraEditor
+      textureWidth={this.props.scene.background.texture.width}
+      textureHeight={this.props.scene.background.texture.height}
+      data={this.props.data}
+    />,
+    walkable: _ => <PathEditor
+      textureHeight={this.props.scene.background.texture.height}
+      textureWidth={this.props.scene.background.texture.width}
+      editorScale={Editor.SCALE}
+      data={this.props.data}
+    />,
+    world: _ => <WorldEditor
+      data={this.props.data}
+    />
+  }
+
+  componentWillMount() {
+    if(__DEV__ && Editor.propTypes.data(this.props, 'data', 'Editor', 'prop', 'data') instanceof Error)  {
+      emitter.emit('r_last_state')
     }
   }
 
   render() {
-    const editorScale = 0.3
     const bgScale = this.props.data.bg.scale
     const bgURL = this.props.data.assets[this.props.data.bg.asset]
-    const edit = {
-      camera: <CameraEditor
-        textureWidth={this.props.scene.background.texture.width}
-        textureHeight={this.props.scene.background.texture.height}
-        data={this.props.data}
-      />,
-      walkable: <PathEditor
-        textureHeight={this.props.scene.background.texture.height}
-        textureWidth={this.props.scene.background.texture.width}
-        editorScale={editorScale}
-        data={this.props.data}
-      />
-    }
+
+    const currentEditor = (_ => {
+      const h = this.editors[this.state.currEditor]
+      return h ? h() : ''
+    })()
     return (
       <div className="editor">
         <div className="editor__stage" style={{
           position: 'relative'
         }}>
           <img style={{
-            height: this.props.scene.background.texture.height * editorScale * bgScale,
+            height: this.props.scene.background.texture.height * Editor.SCALE * bgScale,
             margin: '0 auto',
             opacity: 0.7
           }} src={bgURL}/>
@@ -56,25 +75,28 @@ export default class Editor extends React.Component {
             top: -this.props.data.world.pos[1],
             width: config.size.x,
             height: config.size.y,
-            zoom: editorScale
+            zoom: Editor.SCALE
           }} />
-          {edit[this.state.editFeature]||null}
+          {currentEditor}
         </div>
-        <select onChange={::this.handleEditorChange}>
-          <option value="camera">Camera</option>
-          <option value="walkable">Walkable</option>
+        <select value={this.state.currEditor} onChange={::this.handleEditorChange}>
+          {Object.keys(this.editors).map(
+            val => <option key={val} value={val}>{capitalize(val)}</option>
+          )}
         </select>
         <button onClick={::this.handleClickSave}>Save</button>
       </div>
     )
   }
+
   handleEditorChange(e) {
     this.setState({
-      editFeature: e.target.value
+      currEditor: e.target.value
     })
   }
+
   handleClickSave(e) {
     const d = this.props.data
-    localStorage.setItem('3dsh:last_state', JSON.stringify(d))
+    emitter.emit('u_last_state', d)
   }
 }

@@ -3,7 +3,6 @@ import Rx from 'rx-dom'
 
 const toSyntheticEvent = function(e) {
   const root = e.target;
-  // Warning REFLOW BITCHES!!!!
   const rect = root.getBoundingClientRect()
   if(!e.clientX) {
     console.error('I only know how to handle mouse events')

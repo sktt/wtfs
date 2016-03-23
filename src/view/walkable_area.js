@@ -1,3 +1,4 @@
+import {drawPolygon} from './pixi_draw_utils'
 import {VisibilityGraph, dijkstra} from '../graph'
 
 export default class WalkableArea {
@@ -9,7 +10,7 @@ export default class WalkableArea {
   }
 
   draw(graphics) {
-    graphics.drawPolygon(this.polygon.flat())
+    drawPolygon(this.polygon, graphics)
     return graphics
   }
 

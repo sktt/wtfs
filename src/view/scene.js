@@ -49,9 +49,10 @@ export default class Scene {
 
     this.background.scale.set(sceneData.bg.scale)
 
-    this.walkable = new WalkableArea(new Polygon(sceneData.walkable.map(
+    this.walkable = new WalkableArea(new Polygon(sceneData.walkable.bounds.map(
       p => new Vec2(p[0], p[1])
     )))
+    // TODO walkable with holes
 
     const walkbehindPoly = new Polygon(sceneData.walkbehind.bounds.map(
       p => new Vec2(p[0], p[1])

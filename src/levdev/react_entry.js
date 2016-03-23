@@ -8,6 +8,7 @@ import Scene from '../view/scene'
 import React from 'react'
 import ReactDOM from 'react-dom'
 import Editor from './editor'
+import reactRoot from './react_root'
 
 const obsResize = Rx.Observable.merge(
   Rx.Observable.just(),
@@ -15,7 +16,10 @@ const obsResize = Rx.Observable.merge(
 )
 .map(() => [window.innerWidth, window.innerHeight])
 
-export default (sceneData) => {
+// keep any current subscription here and dispose when necessary
+let subscription = null
+
+export default sceneData => {
   document.body.style.backgroundColor = '#000'
   document.body.style.height = '100%'
   document.body.style.margin = '0'
@@ -32,16 +36,16 @@ export default (sceneData) => {
   const obsScene = obsResources
     .map(resources => new Scene(resources, config.size, sceneData))
 
-  Rx.Observable
-    .combineLatest(obsScene, obsResize)
-    .subscribe(([scene, dims]) => {
-      let reactMain = document.querySelector('#reactMain')
-      if(!reactMain) {
-        reactMain = document.createElement('div')
-        reactMain.id = 'reactMain'
-        reactMain.style.height = '100%'
-        document.body.appendChild(reactMain)
-      }
-      ReactDOM.render(<Editor dims={dims} data={sceneData} scene={scene}/>, reactMain)
+  if(subscription) {
+    subscription.dispose()
+  }
+
+  subscription = Rx.Observable
+    .combineLatest(reactRoot, obsScene, obsResize)
+    .subscribe(([reactRoot, scene, dims]) => {
+      ReactDOM.render(
+        <Editor dims={dims}
+          data={sceneData}
+          scene={scene} />, reactRoot)
     })
 }

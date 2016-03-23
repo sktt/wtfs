@@ -19,12 +19,15 @@ const DEFAULT_STATE = {
     test: './t.jpg', //'./test.jpg',
     monsters: './monsters-32x32.png'
   },
-  walkable: [
-    [199, 689], [2, 731], [3, 758],
-    [641, 788], [582, 700], [605, 617],
-    [844, 628], [829, 595], [516, 601],
-    [488, 645], [438, 694], [365, 749],
-    [206, 732] ],
+  walkable: {
+    bounds: [
+      [199, 689], [2, 731], [3, 758],
+      [641, 788], [582, 700], [605, 617],
+      [844, 628], [829, 595], [516, 601],
+      [488, 645], [438, 694], [365, 749],
+      [206, 732] ],
+    holes: []
+  },
   walkbehind: {
     bounds: [
       [626, 612], [604, 608], [602, 590],
@@ -85,10 +88,31 @@ const DEFAULT_STATE = {
   }
 }
 
+
 if(!localStorage.getItem('3dsh:last_state')) {
-  localStorage.setItem('3dsh:last_state', JSON.serialize(DEFAULT_STATE))
+  localStorage.setItem('3dsh:last_state', JSON.stringify(DEFAULT_STATE))
 }
 
-export default Rx.Observable
+Rx.Observable
+  .fromEvent(emitter, 'u_last_state')
+  .merge(Rx.Observable.fromEvent(emitter, 'r_last_state').map(
+    _ => DEFAULT_STATE
+  ))
+  .subscribe(
+    s => localStorage.setItem('3dsh:last_state', JSON.stringify(s))
+  )
+
+const state = Rx.Observable
   .just(JSON.parse(localStorage.getItem('3dsh:last_state')))
   .merge(Rx.Observable.fromEvent(emitter, 'u_state'))
+
+export default state.merge(
+  Rx.Observable.fromEvent(emitter, 'u_state_walkable').withLatestFrom(
+    state,
+    (walkable, state) => {
+      state.walkable = walkable
+      return state
+    }
+  )
+)
+
