@@ -22,3 +22,21 @@ export const mousemove = reactRoot
       (e.clientY + scroll.y) / Editor.SCALE
     )
   )
+
+export const mouseup = reactRoot
+  .flatMap(n => Rx.DOM.mouseup(n))
+  .combineLatest(scrollPos)
+  .map(
+    ([e, scroll]) => new Vec2(
+      (e.clientX + scroll.x) / Editor.SCALE,
+      (e.clientY + scroll.y) / Editor.SCALE
+    )
+  )
+
+const filterKey = which => e => e.which === which
+
+export const keyup = which => Rx.DOM.keyup(window)
+  .filter(filterKey(which))
+
+export const keydown = which => Rx.DOM.keydown(window)
+  .filter(filterKey(which))
