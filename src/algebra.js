@@ -145,6 +145,14 @@ export class Polygon {
     return this.contains(poly.points[0]) && !this.intersectsPoly(poly)
   }
 
+  intersectsLine(line: Line2): boolean {
+    return this.sides().some(
+      l => l.intersects(line)
+    ) || this.interior.some(
+      hole => hole.intersectsLine(line)
+    )
+  }
+
   intersectsPoly(poly: Polygon): boolean {
     return poly.sides().some(
       l1 => this.sides().some(
