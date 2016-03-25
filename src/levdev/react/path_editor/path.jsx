@@ -14,7 +14,8 @@ export default class Path extends React.Component {
     )
   }
   static defaultProps = {
-    points: []
+    points: [],
+    holes: []
   }
   constructor() {
     super()
@@ -31,10 +32,19 @@ export default class Path extends React.Component {
   }
   render() {
     const ps = this.props.points
-    const pathD = ps.length
+    const hs = this.props.holes
+    let pathD = ps.length
       ? `M${ps[0].x} ${ps[0].y}` + ps.slice(1).map(
         ({x, y}) => `L${x} ${y}`
       ) + 'Z'
+      : ''
+
+    pathD += hs.length
+      ? hs.map(
+        h => `M${h[0].x} ${h[0].y}` + h.map(
+          ({x, y}) => `L${x} ${y}`
+        ) + 'Z'
+      ).join('')
       : ''
 
     return (
@@ -42,7 +52,7 @@ export default class Path extends React.Component {
         <path
           style={{
             stroke: 'red',
-            fill: 'rgba(255, 0, 0, 0.5)',
+            fill: this.props.bg,
             fillRule: 'evenodd'
           }}
           onClick={::this.handlePathClick}

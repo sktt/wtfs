@@ -1,5 +1,5 @@
 import React, {PropTypes} from 'react'
-import {mousemove} from '../../interaction'
+import {mousemove, mouseup} from '../../interaction'
 import {Vec2} from '../../../algebra'
 
 export default class PointEditor extends React.Component {
@@ -11,12 +11,12 @@ export default class PointEditor extends React.Component {
     }
   }
   componentDidMount() {
-    window.addEventListener('mouseup', ::this.handleMouseUp)
+    this.mouseupDisposable = mouseup.subscribe(::this.handleMouseUp)
     this.mousemoveDisposable = mousemove.subscribe(::this.handleMouseMove)
   }
   componentWillUnmount() {
     this.mousemoveDisposable.dispose()
-    window.removeEventListener('mouseup', ::this.handleMouseUp)
+    this.mouseupDisposable.dispose()
   }
   render() {
     return (
@@ -33,9 +33,9 @@ export default class PointEditor extends React.Component {
             r="15px"
             fill={this.state.activeIndex === i
               ? "#0f0"
-                : this.state.hoverIndex === i
+              : this.state.hoverIndex === i
                 ? "#00f"
-                : "#000"
+                : "rgba(0,0,0,0.0)"
             } />
         )}
       </g>
