@@ -85,13 +85,13 @@ export class Edge {
 export class VisibilityGraph {
   nodes: Node[];
   polygon: Polygon;
-  constructor(nodes, polygon) {
+  constructor(nodes: Node[], polygon: Polygon) {
     this.nodes = nodes
     // has bounding points, subset of points of nodes
     this.polygon = polygon
   }
 
-  linkNodes(n1, n2) {
+  linkNodes(n1: Node, n2: Node): void {
     // link nodes
     n1.link(n2)
     n2.link(n1)
@@ -106,11 +106,11 @@ export class VisibilityGraph {
     }
   }
 
-  connectNode(n) {
+  connectNode(n: Node): void {
     this._connect(this.nodes, n)
   }
 
-  unlinkNode(n1) {
+  unlinkNode(n1: Node): void {
     // remove from neighbours
     n1.unlink()
 
@@ -118,7 +118,7 @@ export class VisibilityGraph {
     this.nodes = this.nodes.filter((n2) => n2 !== n1)
   }
 
-  draw(graphics) {
+  draw(graphics: PIXI.Graphics): void {
     this.nodes.forEach((node) => {
       node.neighbours.forEach((edge) => {
         const a = node.pos
@@ -130,28 +130,37 @@ export class VisibilityGraph {
   }
 
   // private
-  _connect(nodes, n1) {
-    const polygonLines = this.polygon.sides()
+  _connect(nodes: Node[], n1: Node): void {
     nodes
-      .map(n2 => [new Line2(n1.pos, n2.pos), n2])
-      .filter(([l1, n]) => !polygonLines.some(l2 => l2.intersects(l1)))
-      .filter(([l1, _]) => this.polygon.contains(l1.centerPoint()))
-      .forEach(([_, n2]) => this.linkNodes(n1, n2))
+      .map(
+        n2 => [new Line2(n1.pos, n2.pos), n2]
+      )
+      .filter(
+        ([l1, n]) => !this.polygon.intersectsLine(l1)
+      )
+      .filter(
+        ([l1, _]) => this.polygon.contains(l1.centerPoint())
+      )
+      .forEach(
+        ([_, n2]) => this.linkNodes(n1, n2)
+      )
   }
 
-  static fromPolygon(polygon) {
+  static fromPolygon(polygon: Polygon): VisibilityGraph {
     const vecToNode = (vec) => new Node(vec.x, vec.y)
-    const nodes = polygon.points.map((p) => new Node(p))
+    let nodes = polygon.points.map((p) => new Node(p))
+    nodes = nodes.concat.apply(nodes,
+      polygon.interior.map(
+        h => h.points.map(
+          p => new Node(p)
+        )
+      )
+    )
     const instance = new VisibilityGraph(nodes, polygon)
 
     nodes.forEach((n1, i) => {
-      let n2 = nodes[(i + 1) % nodes.length]
-
-      // neighbour nodes in a polygon must be visible to eachother
-      instance.linkNodes(n1, n2)
-
       // no need to go through all, a->b will also link b->a
-      instance._connect(nodes.slice(i + 2), n1)
+      instance._connect(nodes.slice(i + 1), n1)
     })
 
     return instance

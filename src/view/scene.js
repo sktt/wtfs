@@ -49,19 +49,17 @@ export default class Scene {
 
     this.background.scale.set(sceneData.bg.scale)
 
-    this.walkable = new WalkableArea(new Polygon(sceneData.walkable.bounds.map(
-      p => new Vec2(p[0], p[1])
-    )))
-    // TODO walkable with holes
+    const walkablePoly = new Polygon(sceneData.walkable.bounds.map(Vec2.fromArray))
+    sceneData.walkable.holes.forEach(
+      h => walkablePoly.addHole(new Polygon(h.map(Vec2.fromArray)))
+    )
+    this.walkable = new WalkableArea(walkablePoly)
 
     const walkbehindPoly = new Polygon(sceneData.walkbehind.bounds.map(
-      p => new Vec2(p[0], p[1])
+      Vec2.fromArray
     ))
-
     sceneData.walkbehind.holes.forEach(
-      h => walkbehindPoly.addHole(new Polygon(h.map(
-        p => new Vec2(p[0], p[1])
-      )))
+      h => walkbehindPoly.addHole(new Polygon(h.map(Vec2.fromArray)))
     )
     this.walkbehind = new WalkbehindArea(this.background, walkbehindPoly)
 
@@ -98,10 +96,12 @@ export default class Scene {
     this.mainChar.update(dt)
   }
   initListeners() {
-    if (this.unsubscribers && this.unsubscribers.length) {
-      this.unsubscribers.forEach((unsub) => unsub())
+    if (this.disposables && this.disposables.length) {
+      this.disposables.forEach(
+        disposable => disposable.dispose()
+      )
     }
-    this.unsubscribers = []
+    this.disposables = []
 
     // set up listeners
     const bgInteraction = new IA(this.background)
@@ -110,8 +110,8 @@ export default class Scene {
     this.world.addChild(this.devWalkPath)
 
     // addListener returns an unsubscribe function
-    this.unsubscribers.push(bgInteraction.addListener('mousedown', ::this.handleMouseDown))
-    this.unsubscribers.push(bgInteraction.addListener('mousemove', ::this.handleMouseMove))
+    this.disposables.push(bgInteraction.addListener('mousedown', ::this.handleMouseDown))
+    this.disposables.push(bgInteraction.addListener('mousemove', ::this.handleMouseMove))
   }
 
   handleMouseDown(e) {
