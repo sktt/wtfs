@@ -15,28 +15,23 @@ const toSyntheticEvent = function(e) {
   }
 }
 
-var rootDOMNode = Rx.Observable.create(observer => {
-  const c = document.querySelector('canvas')
-  if(c) {
-    observer.onNext(c)
-  } else {
-    observer.onError(new Error('not entered'))
-  }
-  observer.onCompleted()
-  return () => console.log('unsub')
-})
-.catch(
-  _ => Rx.DOM.fromMutationObserver(document.body, {
-    attributes: true,
+// todo: why added events to this emitted canvas
+// not working ????
+const enteringCanvas =
+  Rx.DOM.fromMutationObserver(document.body, {
     childList: true,
-    characterData: true,
   }).map(
-    records => records.reduce(
-      (acc, el) => acc || el.addedNodes && Array.prototype.concat.apply([], el.addedNodes).find(
-        (el) => el.nodeName === 'CANVAS'
-      ), null
+    records => records.filter(
+      r => r.addedNodes && r.addedNodes.length
+    ).reduce(
+      (acc, rec) => acc.concat.apply(acc, rec.addedNodes), []
+    ).find(
+      el => el.nodeName === 'CANVAS'
     )
   )
+
+var rootDOMNode = Rx.Observable.defer(
+  () => Rx.Observable.just(document.querySelector('canvas'))
 )
 .filter(x => x)
 .take(1)
