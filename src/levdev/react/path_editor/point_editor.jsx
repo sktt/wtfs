@@ -75,6 +75,7 @@ export default class PointEditor extends React.Component {
     // onchange
     // prevent context menu
     e.preventDefault()
+    this.props.onPointRemove(i)
   }
 }
 

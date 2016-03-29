@@ -45,6 +45,7 @@ export default class PolygonTool extends React.Component {
               editablePoints={bounds}
               scale={scale}
               onPointChange={::this.handleBoundsChange}
+              onPointRemove={::this.handleBoundsPointRemove}
             />
           : null
         }
@@ -62,6 +63,7 @@ export default class PolygonTool extends React.Component {
                 editablePoints={h}
                 scale={scale}
                 onPointChange={this.handleHoleChange.bind(this, i)}
+                onPointRemove={this.handleHolePointRemove.bind(this, i)}
               />
               : null
             }
@@ -184,6 +186,34 @@ export default class PolygonTool extends React.Component {
         )
       })
     }
+  }
+  handleBoundsPointRemove(pointIdx: number) {
+    const ps = this.props.polygon.points
+    emitter.emit('u_state_walkable', {
+      bounds: ps.slice(0, pointIdx).concat(ps.slice(pointIdx + 1)).map(p=>p.arr()),
+      holes: this.props.polygon.interior.map(
+        poly => poly.points.map(
+          p => p.arr()
+        )
+      )
+    })
+  }
+  handleHolePointRemove(holeIdx: number, pointIdx: number) {
+    let holes = this.props.polygon.interior.slice()
+    if(holes[holeIdx].length > 3) {
+      holes[holeIdx].points = holes[holeIdx].points.slice(0, pointIdx).concat(holes[holeIdx].slice(pointIdx + 1))
+    } else {
+      // not a polygon anymore.. remove the whole thing
+      holes = holes.slice(0, holeIdx).concat(holes.slice(holeIdx+1))
+    }
+    emitter.emit('u_state_walkable', {
+      bounds: this.props.polygon.points.map(p => p.arr()),
+      holes: holes.map(
+        poly => poly.points.map(
+          p => p.arr()
+        )
+      )
+    })
   }
   handleHoleChange(i: number, j: number, pos: Vec2) {
     const holes = [].concat(this.props.polygon.interior)
