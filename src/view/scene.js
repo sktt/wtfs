@@ -121,8 +121,8 @@ export default class Scene {
     const mousePos = new Vec2(x, y)
     const ps = this.walkable.polygon.points
 
-    const toPos = this.walkable.polygon.nearestInside(new Vec2(x, y))[0]
-    const fromPos = this.walkable.polygon.nearestInside(this.mainChar.pos())[0]
+    const toPos = this.walkable.polygon.nearestInside(new Vec2(x, y))
+    const fromPos = this.walkable.polygon.nearestInside(this.mainChar.pos())
     const walkPath = this.walkable.findPath(
       new Node(fromPos),
       new Node(toPos)

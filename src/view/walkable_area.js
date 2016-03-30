@@ -16,8 +16,8 @@ export default class WalkableArea {
 
   findPath(from, to) {
     if (!(this.polygon.contains(from.pos) && this.polygon.contains(to.pos))) {
-      console.error(`Shit data: ${from.pos.x},${from.pos.y} ${to.pos.x},${to.pos.y}`)
-      return []
+      console.warn(`Not within walkable: ${from.pos.x},${from.pos.y} ${to.pos.x},${to.pos.y}`)
+      console.warn('things might break')
     }
 
     this.visGraph.connectNode(from)

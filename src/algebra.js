@@ -115,6 +115,9 @@ export class Line2 {
 
     return v.scale(x.dot(v) / v.dot(v)).add(this.a)
   }
+  static fromArray(a, b) {
+    return new Line2(Vec2.fromArray(a), Vec2.fromArray(b))
+  }
 }
 
 export class Polygon {
@@ -122,6 +125,18 @@ export class Polygon {
   constructor(points) {
     this.points = points
     this.interior = [] // holes
+  }
+
+  getLoops() {
+    const bounds = this.points.map(
+      p => p.arr()
+    )
+    const holes = this.interior.map(
+      h => h.points.map(
+        p => p.arr()
+      )
+    )
+    return [bounds].concat(holes || [])
   }
 
   sides(): Line2[] {
@@ -163,10 +178,11 @@ export class Polygon {
     )
   }
 
-  contains(test: Vec2): boolean {
-    const EPS = 0.1
+  contains(test: Vec2, EPS = 0.1): boolean {
 
     // picked up at http://gamedev.stackexchange.com/questions/31741/adding-tolerance-to-a-point-in-polygon-test
+    // this needs to handle holes .. if a point is on an edge to a hole then it will
+    // appear to be in both the hole and the polygon
     let oldPoint = this.points[this.points.length - 1]
     let oldSqDist = oldPoint.distSq(test)
     let inside = false
@@ -205,22 +221,33 @@ export class Polygon {
       !this.interior.some(hole => hole.contains(test))
   }
 
-  // return the point in this polygon that is the nearest to to `point`
-  // todo: weird return type
-  nearestInside(point: Vec2): [Vec2, number] {
-    if(this.contains(point)) return [point, -1]
-
+  // Gives the nearest point to `point` that is on the edge of the shape
+  nearestEdgePoint(point: Vec2): Vec2 {
     let nearest = Vec2.INF
-    let neighbourIndex = -1
     this.points.forEach((p1, i, ps) => {
       const p2 = ps[(i+1) % ps.length]
       const near = new Line2(p1, p2).closestTo(point.sub(p1))
       if(near.dist(point) < nearest.dist(point)) {
         nearest = near
-        neighbourIndex = i
       }
     })
+    const hole = this.interior.find(
+      hole => hole.contains(point)
+    )
+    if(hole) {
+      const near = hole.nearestEdgePoint(point)
+      if(near.dist(point) < nearest.dist(point)) {
+        nearest = near
+      }
+    }
+    return nearest
+  }
 
-    return [nearest, neighbourIndex]
+  nearestInside(point: Vec2): Vec2 {
+    if(this.contains(point)) {
+      return point
+    }
+
+    return this.nearestEdgePoint(point)
   }
 }
