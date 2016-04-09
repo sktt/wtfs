@@ -1,7 +1,6 @@
 import T from './types'
 import React from 'react'
 import ReactDOM from 'react-dom'
-import emitter from '../../emitter'
 import {Line2, Polygon, Vec2} from '../../algebra'
 import PolygonTool from './path_editor/polygon_tool'
 

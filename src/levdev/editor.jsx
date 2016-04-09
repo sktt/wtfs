@@ -2,10 +2,11 @@ import T from './react/types'
 
 import config from '../config'
 import React from 'react'
-import emitter from '../emitter'
 import CameraEditor from './react/camera_editor'
 import PathEditor from './react/path_editor'
 import WorldEditor from './react/world_editor'
+
+import Actions from './actions'
 
 const capitalize = (str) => String.fromCharCode(str.charCodeAt(0) - 32) + str.slice(1)
 
@@ -41,8 +42,10 @@ export default class Editor extends React.Component {
   }
 
   componentWillMount() {
+    // no state -> reset
     if(__DEV__ && Editor.propTypes.data(this.props, 'data', 'Editor', 'prop', 'data') instanceof Error)  {
-      emitter.emit('r_last_state')
+      Actions.reset()
+      Actions.save()
     }
   }
 
@@ -97,6 +100,8 @@ export default class Editor extends React.Component {
 
   handleClickSave(e) {
     const d = this.props.data
-    emitter.emit('u_last_state', d)
+    // probably redundant update here
+    Actions.updateState(d)
+    Actions.save()
   }
 }

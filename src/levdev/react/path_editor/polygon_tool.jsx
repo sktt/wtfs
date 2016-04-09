@@ -1,7 +1,7 @@
 import Path from './path'
 import React from 'react'
 import {Polygon, Vec2, Line2} from '../../../algebra'
-import emitter from '../../../emitter'
+import Actions from '../../actions.js'
 import PointEditor from './point_editor'
 import {mousemove, keyup} from './../../interaction'
 import PathDrawer from './path_drawer'
@@ -89,36 +89,27 @@ export default class PolygonTool extends React.Component {
     if(this.state.drawPathPoints.length) {
       this.resetDrawPath()
     } else if (this.state.selectedHole >= 0) {
+      const p = this.props.polygon.serialize()
       // remove hole
-      const holes = [].concat(this.props.polygon.interior)
-      holes.splice(this.state.selectedHole, 1)
-      emitter.emit('u_state_walkable', {
-        bounds: this.props.polygon.points.map(p => p.arr()),
-        holes: holes.map(
-          poly => poly.points.map(
-            p => p.arr()
-          )
-        )
-      })
+      p.holes.splice(this.state.selectedHole, 1)
+      Actions.updateWalkable(p)
+
       this.setState({
         selectedHole: -1
       })
     }
   }
   handleConnectPath() {
+    // take the newly drawn hole
     const hole = this.state.drawPathPoints
-    emitter.emit('u_state_walkable', {
-      // maybe also pass array version
-      // or transform in polygon.. unncessary work
-      bounds: this.props.polygon.points.map(p => p.arr()),
-      holes: this.props.polygon.interior.map(
-        poly => poly.points.map(
-          p => p.arr()
-        )
-      ).concat([hole.map(
-        p => p.arr()
-      )])
-    })
+
+    // get the current polygon and concat with the new hole
+    const p = this.props.polygon.serialize()
+    p.holes = p.holes.concat([hole.map(p => p.arr())])
+
+    Actions.updateWalkable(p)
+
+    // exit draw path mode
     this.resetDrawPath()
   }
   handleMouseMove(pos: Vec2) {
@@ -157,6 +148,7 @@ export default class PolygonTool extends React.Component {
     })
   }
   handleBoundsChange(i: number, pos: Vec2) {
+    // lots of logics going on here.. push into rx.subect?
     const ps = [].concat(this.props.polygon.points)
     ps[i] = pos
 
@@ -175,45 +167,34 @@ export default class PolygonTool extends React.Component {
     )
 
     if(!anyInteresctions && !intersectsSelf) {
-      emitter.emit('u_state_walkable', {
-        // maybe also pass array version
-        // or transform in polygon.. unncessary work
-        bounds: ps.map(p => p.arr()),
-        holes: this.props.polygon.interior.map(
-          poly => poly.points.map(
-            p => p.arr()
-          )
-        )
-      })
+      // use new bounds
+      const p = newBounds.serialize()
+      // use old holes
+      p.holes = this.props.polygon.serialize().holes
+      Actions.updateWalkable(p)
     }
   }
   handleBoundsPointRemove(pointIdx: number) {
-    const ps = this.props.polygon.points
-    emitter.emit('u_state_walkable', {
-      bounds: ps.slice(0, pointIdx).concat(ps.slice(pointIdx + 1)).map(p=>p.arr()),
-      holes: this.props.polygon.interior.map(
-        poly => poly.points.map(
-          p => p.arr()
-        )
-      )
-    })
+    const p = this.props.polygon.serialize()
+
+    // remove point at pointIdx
+    p.bounds = p.bounds.slice(0, pointIdx).concat(p.bounds.slice(pointIdx + 1))
+    // todo check that no the action is valid
+    Actions.updateWalkable(p)
   }
   handleHolePointRemove(holeIdx: number, pointIdx: number) {
-    let holes = this.props.polygon.interior.slice()
-    if(holes[holeIdx].length > 3) {
-      holes[holeIdx].points = holes[holeIdx].points.slice(0, pointIdx).concat(holes[holeIdx].slice(pointIdx + 1))
+    const p = this.props.polygon.serialize()
+
+    if(p.holes[holeIdx].length > 3) {
+      p.holes[holeIdx].points = p.holes[holeIdx].points
+        .slice(0, pointIdx)
+        .concat(p.holes[holeIdx].slice(pointIdx + 1))
     } else {
       // not a polygon anymore.. remove the whole thing
-      holes = holes.slice(0, holeIdx).concat(holes.slice(holeIdx+1))
+      p.holes = p.holes.slice(0, holeIdx).concat(p.holes.slice(holeIdx+1))
     }
-    emitter.emit('u_state_walkable', {
-      bounds: this.props.polygon.points.map(p => p.arr()),
-      holes: holes.map(
-        poly => poly.points.map(
-          p => p.arr()
-        )
-      )
-    })
+
+    Action.updateWalkable(p)
   }
   handleHoleChange(i: number, j: number, pos: Vec2) {
     const holes = [].concat(this.props.polygon.interior)
@@ -222,16 +203,9 @@ export default class PolygonTool extends React.Component {
     if(!holes.some(
       hole => hole !== newHole && hole.intersectsPoly(newHole)
     ) && !new Polygon(this.props.polygon.points).intersectsPoly(newHole)) {
-      emitter.emit('u_state_walkable', {
-        // maybe also pass array version
-        // or transform in polygon.. unncessary work
-        bounds: this.props.polygon.points.map(p => p.arr()),
-        holes: holes.map(
-          poly => poly.points.map(
-            p => p.arr()
-          )
-        )
-      })
+      const p = this.props.polygon.serialize()
+      p.holes[i] = newHole.points.map(p => p.arr())
+      Actions.updateWalkable(p)
     }
   }
 }

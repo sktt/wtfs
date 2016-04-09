@@ -1,6 +1,6 @@
 import T from './types'
 import React, {PropTypes as Type} from 'react'
-import emitter from '../../emitter'
+import Actions from '../actions'
 
 export default class WorldEditor extends React.Component {
 
@@ -25,6 +25,6 @@ export default class WorldEditor extends React.Component {
   handleBgScaleChange(e) {
     const d = this.props.data
     d.bg.scale = e.target.value
-    emitter.emit('u_state', d)
+    Actions.updateState(d)
   }
 }

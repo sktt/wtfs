@@ -1,6 +1,6 @@
 import T from './types'
 import React, {PropTypes as Type} from 'react'
-import emitter from '../../emitter'
+import Actions from '../actions'
 import config from '../../config'
 
 export default class CameraEditor extends React.Component {
@@ -35,11 +35,11 @@ export default class CameraEditor extends React.Component {
   handleWorldXChange(e) {
     const d = this.props.data
     d.world.pos[0] = -e.target.value
-    emitter.emit('u_state', d)
+    Actions.updateState(d)
   }
   handleWorldYChange(e) {
     const d = this.props.data
     d.world.pos[1] = -e.target.value
-    emitter.emit('u_state', d)
+    Actions.updateState(d)
   }
 }

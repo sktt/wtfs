@@ -128,6 +128,13 @@ export class Polygon {
     this.interior = [] // holes
   }
 
+  serialize(): {} {
+    return {
+      bounds: this.points.map(p => p.arr()),
+      holes: this.interior.map(hole => hole.points.map(p => p.arr()))
+    }
+  }
+
   getLoops() {
     const bounds = this.points.map(
       p => p.arr()
