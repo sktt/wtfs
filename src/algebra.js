@@ -1,4 +1,5 @@
 /*@flow*/
+
 export class Vec2 {
   x: number;
   y: number;
@@ -137,6 +138,23 @@ export class Polygon {
       )
     )
     return [bounds].concat(holes || [])
+  }
+
+  isClockwise(): boolean {
+    return this.area() > 0
+  }
+
+  area(): number {
+    let area = 0
+    const first = this.points[0]
+    for(let i = 2; i < this.points.length; i++) {
+      let p = this.points[i-1]
+      let c = this.points[i]
+      let e0 = first.sub(p)
+      let e1 = first.sub(c)
+      area += e0.x * e1.y - e0.y * e1.x
+    }
+    return area/2
   }
 
   sides(): Line2[] {
