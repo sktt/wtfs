@@ -1,7 +1,7 @@
 import T from './types'
 import React from 'react'
 import ReactDOM from 'react-dom'
-import {Line2, Polygon, Vec2} from '../../algebra'
+import {Line2, Polygon, SimplePolygon, Vec2} from '../../algebra'
 import PolygonTool from './path_editor/polygon_tool'
 
 export default class PathEditor extends React.Component {
@@ -58,10 +58,10 @@ export default class PathEditor extends React.Component {
     )
   }
   _makePolygon(props = this.props) {
-    const p = new Polygon(props.data.walkable.bounds.map(Vec2.fromArray))
+    const p = new Polygon(new SimplePolygon(props.data.walkable.bounds.map(Vec2.fromArray)))
 
     props.data.walkable.holes.forEach(
-      h => p.addHole(new Polygon(h.map(Vec2.fromArray)))
+      h => p.addHole(new SimplePolygon(h.map(Vec2.fromArray)))
     )
     this.setState({
       polygon: p

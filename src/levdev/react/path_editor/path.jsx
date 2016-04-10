@@ -1,7 +1,6 @@
 import T from '../types'
 import React, {PropTypes} from 'react'
 import ReactDOM from 'react-dom'
-import {Line2, Polygon, Vec2} from '../../../algebra'
 import {mousemove} from '../../interaction'
 
 export default class Path extends React.Component {

@@ -148,7 +148,7 @@ export class VisibilityGraph {
 
   static fromPolygon(polygon: Polygon): VisibilityGraph {
     const vecToNode = (vec) => new Node(vec.x, vec.y)
-    let nodes = polygon.points.map((p) => new Node(p))
+    let nodes = polygon.points.points.map((p) => new Node(p))
     nodes = nodes.concat.apply(nodes,
       polygon.interior.map(
         h => h.points.map(

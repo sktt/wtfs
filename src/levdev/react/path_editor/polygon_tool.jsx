@@ -1,6 +1,6 @@
 import Path from './path'
 import React from 'react'
-import {Polygon, Vec2, Line2} from '../../../algebra'
+import {SimplePolygon, Vec2, Line2} from '../../../algebra'
 import Actions from '../../actions.js'
 import PointEditor from './point_editor'
 import {mousemove, keyup} from './../../interaction'
@@ -25,7 +25,7 @@ export default class PolygonTool extends React.Component {
     this.keyupEscDisposeable.dispose()
   }
   render() {
-    const bounds = this.props.polygon.points
+    const bounds = this.props.polygon.points.points
     const holes = this.props.polygon.interior.map(
       h => h.points
     )
@@ -149,10 +149,10 @@ export default class PolygonTool extends React.Component {
   }
   handleBoundsChange(i: number, pos: Vec2) {
     // lots of logics going on here.. push into rx.subect?
-    const ps = [].concat(this.props.polygon.points)
+    const ps = [].concat(this.props.polygon.points.points)
     ps[i] = pos
 
-    const newBounds = new Polygon(ps)
+    const newBounds = new SimplePolygon(ps)
 
     const anyInteresctions = this.props.polygon.interior.some(
       hole => newBounds.intersectsPoly(hole)
@@ -167,11 +167,15 @@ export default class PolygonTool extends React.Component {
     )
 
     if(!anyInteresctions && !intersectsSelf) {
-      // use new bounds
-      const p = newBounds.serialize()
-      // use old holes
-      p.holes = this.props.polygon.serialize().holes
-      Actions.updateWalkable(p)
+
+      Actions.updateWalkable({
+        // use new bounds
+        bounds: newBounds.serialize(),
+        // use old holes
+        holes: this.props.polygon.interior.map(
+          hole => hole.serialize()
+        )
+      })
     }
   }
   handleBoundsPointRemove(pointIdx: number) {
@@ -184,27 +188,28 @@ export default class PolygonTool extends React.Component {
   }
   handleHolePointRemove(holeIdx: number, pointIdx: number) {
     const p = this.props.polygon.serialize()
+    const hole = p.holes[holeIdx]
 
-    if(p.holes[holeIdx].length > 3) {
-      p.holes[holeIdx].points = p.holes[holeIdx].points
-        .slice(0, pointIdx)
-        .concat(p.holes[holeIdx].slice(pointIdx + 1))
+    if(hole.length > 3) {
+      p.holes[holeIdx] = hole.slice(0, pointIdx).concat(hole.slice(pointIdx + 1))
     } else {
       // not a polygon anymore.. remove the whole thing
       p.holes = p.holes.slice(0, holeIdx).concat(p.holes.slice(holeIdx+1))
     }
 
-    Action.updateWalkable(p)
+    Actions.updateWalkable(p)
   }
-  handleHoleChange(i: number, j: number, pos: Vec2) {
+  handleHoleChange(holeIdx: number, pointIdx: number, pos: Vec2) {
     const holes = [].concat(this.props.polygon.interior)
-    const newHole = holes[i]
-    newHole.points[j] = pos
+    const newHole = holes[holeIdx]
+    newHole.points[pointIdx] = pos
     if(!holes.some(
-      hole => hole !== newHole && hole.intersectsPoly(newHole)
-    ) && !new Polygon(this.props.polygon.points).intersectsPoly(newHole)) {
+      hole => hole !== newHole && // not self
+        // not intersecting with other holes
+        hole.intersectsPoly(newHole)
+    ) && !this.props.polygon.points.intersectsPoly(newHole)) {
       const p = this.props.polygon.serialize()
-      p.holes[i] = newHole.points.map(p => p.arr())
+      p.holes[holeIdx][pointIdx] = pos.arr()
       Actions.updateWalkable(p)
     }
   }

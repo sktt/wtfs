@@ -1,4 +1,5 @@
 /*@flow*/
+import pibp from 'point-in-big-polygon'
 
 export class Vec2 {
   x: number;
@@ -121,30 +122,17 @@ export class Line2 {
   }
 }
 
-export class Polygon {
+// Basic polygon without holes and that madness
+export class SimplePolygon {
   points: Vec2[];
   constructor(points) {
     this.points = points
-    this.interior = [] // holes
   }
 
-  serialize(): {} {
-    return {
-      bounds: this.points.map(p => p.arr()),
-      holes: this.interior.map(hole => hole.points.map(p => p.arr()))
-    }
-  }
-
-  getLoops() {
-    const bounds = this.points.map(
-      p => p.arr()
+  serialize(): [[number, number]] {
+    return this.points.map(
+      vec => vec.arr()
     )
-    const holes = this.interior.map(
-      h => h.points.map(
-        p => p.arr()
-      )
-    )
-    return [bounds].concat(holes || [])
   }
 
   isClockwise(): boolean {
@@ -168,46 +156,20 @@ export class Polygon {
     return this.points.map((p1, i, ps) => new Line2(p1, ps[(i+1) % ps.length]))
   }
 
-  addHole(polygon: Polygon): void {
-    if (polygon.points.length < 2) {
-      throw Error('Not a polygon')
-    }
-    if(!this.containsPolygon(polygon)) {
-      throw Error('Trying to add interior polygon that is not contained in this')
-    }
-
-    this.interior = this.interior.concat(polygon)
-  }
-
-  containsPolygon(poly: Polygon): boolean {
-    // this polygon contains `poly` when no side intersects with this and
-    // one of `poly`s vertices are interior of this
-    return this.contains(poly.points[0]) && !this.intersectsPoly(poly)
-  }
-
   intersectsLine(line: Line2): boolean {
     return this.sides().some(
       l => l.intersects(line)
-    ) || this.interior.some(
-      hole => hole.intersectsLine(line)
     )
   }
 
-  intersectsPoly(poly: Polygon): boolean {
+  intersectsPoly(poly: SimplePolygon) {
     return poly.sides().some(
-      l1 => this.sides().some(
-        l2 => l1.intersects(l2)
-      )
-    ) || this.interior.some(
-      hole => hole.intersectsPoly(poly)
+      line => this.intersectsLine(line)
     )
   }
 
-  contains(test: Vec2, EPS = 0.1): boolean {
-
+  contains(test: Vec2, EPS: number = 0.1): boolean {
     // picked up at http://gamedev.stackexchange.com/questions/31741/adding-tolerance-to-a-point-in-polygon-test
-    // this needs to handle holes .. if a point is on an edge to a hole then it will
-    // appear to be in both the hole and the polygon
     let oldPoint = this.points[this.points.length - 1]
     let oldSqDist = oldPoint.distSq(test)
     let inside = false
@@ -242,11 +204,10 @@ export class Polygon {
       oldSqDist = newSqDist
     }
 
-    return (inside || this.points.some(p => p.equals(test))) &&
-      !this.interior.some(hole => hole.contains(test))
+    // no need to check points ???? epsilon shougld do
+    return inside || this.points.some(p => p.equals(test))
   }
 
-  // Gives the nearest point to `point` that is on the edge of the shape
   nearestEdgePoint(point: Vec2): Vec2 {
     let nearest = Vec2.INF
     this.points.forEach((p1, i, ps) => {
@@ -256,6 +217,74 @@ export class Polygon {
         nearest = near
       }
     })
+    return nearest
+  }
+}
+
+// Extended polygon that supports holes
+export class Polygon {
+  bounds: SimplePolygon;
+  holes: SimplePolygon[];
+  constructor(points) {
+    // Points should be counter clockwise
+    // points === bounds
+    this.points = points
+
+    // Holes should be clockwise.
+    this.interior = [] // holes
+  }
+
+  serialize(): {} {
+    return {
+      bounds: this.points.serialize(),
+      holes: this.interior.map(hole => hole.serialize())
+    }
+  }
+
+  getLoops() {
+    const {bounds, holes} = this.serialize()
+    return [bounds].concat(holes || [])
+  }
+
+  addHole(polygon: SimplePolygon): void {
+    if (polygon.points.length < 2) {
+      throw Error('Not a polygon')
+    }
+    if(!this.containsPolygon(polygon)) {
+      throw Error('Trying to add interior polygon that is not contained in this')
+    }
+
+    this.interior = this.interior.concat(polygon)
+  }
+
+  containsPolygon(poly: SimplePolygon): boolean {
+    // this polygon contains `poly` when no bound side intersects with this and
+    // one of `poly`s vertices are interior of this
+    return this.contains(poly.points[0]) && !this.intersectsPoly(poly)
+  }
+
+  intersectsLine(line: Line2): boolean {
+    return this.points.intersectsLine(line) || this.interior.some(
+      hole => hole.intersectsLine(line)
+    )
+  }
+
+  intersectsPoly(poly: SimplePolygon): boolean {
+    return this.points.intersectsPoly(poly) || this.interior.some(
+      hole => hole.intersectsPoly(poly)
+    )
+  }
+
+  contains(test: Vec2, EPS = 0.1): boolean {
+    return this.points.contains(test, EPS) && !this.interior.some(
+      hole => hole.contains(test, EPS)
+    )
+  }
+
+  // Gives the nearest point to `point` that is on the edge of the shape
+  nearestEdgePoint(point: Vec2): Vec2 {
+    let nearest = this.points.nearestEdgePoint(point)
+
     const hole = this.interior.find(
       hole => hole.contains(point)
     )

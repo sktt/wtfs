@@ -1,7 +1,7 @@
 /* @flow */
 import PIXI from 'pixi.js'
 import {VisibilityGraph, Node} from '../graph'
-import {Polygon, Vec2, Line2} from '../algebra'
+import {SimplePolygon, Polygon, Vec2, Line2} from '../algebra'
 import IA from '../ia'
 import Character from './character'
 import Camera from './camera'
@@ -49,17 +49,17 @@ export default class Scene {
 
     this.background.scale.set(sceneData.bg.scale)
 
-    const walkablePoly = new Polygon(sceneData.walkable.bounds.map(Vec2.fromArray))
+    const walkablePoly = new Polygon(new SimplePolygon(sceneData.walkable.bounds.map(Vec2.fromArray)))
     sceneData.walkable.holes.forEach(
-      h => walkablePoly.addHole(new Polygon(h.map(Vec2.fromArray)))
+      h => walkablePoly.addHole(new SimplePolygon(h.map(Vec2.fromArray)))
     )
     this.walkable = new WalkableArea(walkablePoly)
 
-    const walkbehindPoly = new Polygon(sceneData.walkbehind.bounds.map(
+    const walkbehindPoly = new Polygon(new SimplePolygon(sceneData.walkbehind.bounds.map(
       Vec2.fromArray
-    ))
+    )))
     sceneData.walkbehind.holes.forEach(
-      h => walkbehindPoly.addHole(new Polygon(h.map(Vec2.fromArray)))
+      h => walkbehindPoly.addHole(new SimplePolygon(h.map(Vec2.fromArray)))
     )
     this.walkbehind = new WalkbehindArea(this.background, walkbehindPoly)
 
