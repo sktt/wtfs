@@ -225,10 +225,13 @@ export class SimplePolygon {
 export class Polygon {
   bounds: SimplePolygon;
   holes: SimplePolygon[];
-  constructor(points) {
-    // Points should be counter clockwise
-    // points === bounds
-    this.points = points
+  constructor(bounds) {
+    // Bounds should be counter clockwise
+    if(bounds.isClockwise()) {
+      console.warn('got clockwise bounds, rewinding to anti-clockwise')
+      bounds.points.reverse()
+    }
+    this.bounds = bounds
 
     // Holes should be clockwise.
     this.interior = [] // holes
@@ -236,7 +239,7 @@ export class Polygon {
 
   serialize(): {} {
     return {
-      bounds: this.points.serialize(),
+      bounds: this.bounds.serialize(),
       holes: this.interior.map(hole => hole.serialize())
     }
   }
@@ -253,6 +256,10 @@ export class Polygon {
     if(!this.containsPolygon(polygon)) {
       throw Error('Trying to add interior polygon that is not contained in this')
     }
+    if(!polygon.isClockwise()) {
+      console.warn('got anti-clockwise hole, rewinding to clockwise')
+      polygon.points.reverse()
+    }
 
     this.interior = this.interior.concat(polygon)
   }
@@ -264,26 +271,26 @@ export class Polygon {
   }
 
   intersectsLine(line: Line2): boolean {
-    return this.points.intersectsLine(line) || this.interior.some(
+    return this.bounds.intersectsLine(line) || this.interior.some(
       hole => hole.intersectsLine(line)
     )
   }
 
   intersectsPoly(poly: SimplePolygon): boolean {
-    return this.points.intersectsPoly(poly) || this.interior.some(
+    return this.bounds.intersectsPoly(poly) || this.interior.some(
       hole => hole.intersectsPoly(poly)
     )
   }
 
   contains(test: Vec2, EPS = 0.1): boolean {
-    return this.points.contains(test, EPS) && !this.interior.some(
+    return this.bounds.contains(test, EPS) && !this.interior.some(
       hole => hole.contains(test, EPS)
     )
   }
 
   // Gives the nearest point to `point` that is on the edge of the shape
   nearestEdgePoint(point: Vec2): Vec2 {
-    let nearest = this.points.nearestEdgePoint(point)
+    let nearest = this.bounds.nearestEdgePoint(point)
 
     const hole = this.interior.find(
       hole => hole.contains(point)

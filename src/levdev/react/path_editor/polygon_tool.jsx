@@ -25,7 +25,7 @@ export default class PolygonTool extends React.Component {
     this.keyupEscDisposeable.dispose()
   }
   render() {
-    const bounds = this.props.polygon.points.points
+    const bounds = this.props.polygon.bounds.points
     const holes = this.props.polygon.interior.map(
       h => h.points
     )
@@ -149,7 +149,7 @@ export default class PolygonTool extends React.Component {
   }
   handleBoundsChange(i: number, pos: Vec2) {
     // lots of logics going on here.. push into rx.subect?
-    const ps = [].concat(this.props.polygon.points.points)
+    const ps = [].concat(this.props.polygon.bounds.points)
     ps[i] = pos
 
     const newBounds = new SimplePolygon(ps)
@@ -207,7 +207,7 @@ export default class PolygonTool extends React.Component {
       hole => hole !== newHole && // not self
         // not intersecting with other holes
         hole.intersectsPoly(newHole)
-    ) && !this.props.polygon.points.intersectsPoly(newHole)) {
+    ) && !this.props.polygon.bounds.intersectsPoly(newHole)) {
       const p = this.props.polygon.serialize()
       p.holes[holeIdx][pointIdx] = pos.arr()
       Actions.updateWalkable(p)

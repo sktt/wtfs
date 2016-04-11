@@ -4,7 +4,7 @@ import {Polygon}from '../algebra.js'
 
 export function drawPolygon (poly: Polygon, g: PIXI.Graphics) {
   const flat = (p) => p.reduce((acc, el) => acc.concat([el.x, el.y]), [])
-  let points = flat(poly.points.points)
+  let points = flat(poly.bounds.points)
   let holeIndeces = []
   poly.interior.forEach(hole => {
     holeIndeces = holeIndeces.concat(points.length/2)
