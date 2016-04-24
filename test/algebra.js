@@ -1,9 +1,9 @@
 import test from 'tape'
-import {Polygon, Vec2} from '../src/algebra'
+import {SimplePolygon, Vec2} from '../src/algebra'
 
-test('polygon area', (t) => {
+test('simple polygon area', (t) => {
   t.plan(2)
-  const p = new Polygon([
+  const p = new SimplePolygon([
     new Vec2(0,0),
     new Vec2(0,10),
     new Vec2(10,10),
@@ -17,7 +17,7 @@ test('polygon area', (t) => {
 
 test('polygon winding', (t) => {
   t.plan(2)
-  const p = new Polygon([
+  const p = new SimplePolygon([
     new Vec2(0,0),
     new Vec2(0,10),
     new Vec2(10,10),
