@@ -139,7 +139,17 @@ export class VisibilityGraph {
         ([l1, n]) => !this.polygon.intersectsLine(l1)
       )
       .filter(
-        ([l1, _]) => this.polygon.contains(l1.centerPoint())
+        ([l1, _]) => {
+          const len = l1.len()
+          const dir = l1.dir()
+          // getting a whole bunch of points to avoid nasty float point errors
+          for(let i = 1; i < 5; i++) {
+            if(this.polygon.contains(l1.a.add(dir.scale(i * len/5)))) {
+              return true
+            }
+          }
+          return false
+        }
       )
       .forEach(
         ([_, n2]) => this.linkNodes(n1, n2)

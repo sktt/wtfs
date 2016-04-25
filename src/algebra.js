@@ -76,6 +76,10 @@ export class Line2 {
     return this === o || (this.a.equals(o.a) && this.b.equals(o.b))
   }
 
+  /**
+   * gets a point in the center of the line
+   * floating point errors will of course occurs
+   */
   centerPoint(): Vec2 {
     return this.a.add(this.b).scale(0.5)
   }
@@ -235,6 +239,12 @@ export class Polygon {
 
     // Holes should be clockwise.
     this.interior = [] // holes
+
+    this.updateClassifier()
+  }
+
+  updateClassifier() {
+    this.classifyPoint = pibp(this.getLoops())
   }
 
   serialize(): {} {
@@ -262,6 +272,8 @@ export class Polygon {
     }
 
     this.interior = this.interior.concat(polygon)
+
+    this.updateClassifier()
   }
 
   containsPolygon(poly: SimplePolygon): boolean {
@@ -282,10 +294,12 @@ export class Polygon {
     )
   }
 
-  contains(test: Vec2, EPS = 0.1): boolean {
-    return this.bounds.contains(test, EPS) && !this.interior.some(
-      hole => hole.contains(test, EPS)
-    )
+  containsPIBP(test): number {
+    return this.classifyPoint(test.arr())
+  }
+
+  contains(test: Vec2): boolean {
+    return this.containsPIBP(test) <= 0
   }
 
   // Gives the nearest point to `point` that is on the edge of the shape
@@ -300,6 +314,10 @@ export class Polygon {
       if(near.dist(point) < nearest.dist(point)) {
         nearest = near
       }
+    }
+    if(this.containsPIBP(nearest) > 0) {
+      console.warn('edge point is not inside quick to fix..')
+      return this.nearestEdgePoint(point.add(new Vec2(.01, .01)))
     }
     return nearest
   }

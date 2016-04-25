@@ -41,7 +41,10 @@ export default class Scene {
     this.world.position.y = sceneData.world.pos[1]
 
     if(sceneData.bg.tiling) {
-      this.background = new PIXI.extras.TilingSprite(resources[sceneData.bg.asset].texture, sceneData.bg.width, sceneData.bg.height)
+      this.background = new PIXI.extras.TilingSprite(
+        resources[sceneData.bg.asset].texture,
+        sceneData.bg.width, sceneData.bg.height
+      )
       this.background.tileScale.set(sceneData.bg.tiling.scale)
     } else {
       this.background = new PIXI.Sprite(resources[sceneData.bg.asset].texture)
@@ -49,15 +52,17 @@ export default class Scene {
 
     this.background.scale.set(sceneData.bg.scale)
 
-    const walkablePoly = new Polygon(new SimplePolygon(sceneData.walkable.bounds.map(Vec2.fromArray)))
+    const walkablePoly = new Polygon(new SimplePolygon(
+      sceneData.walkable.bounds.map(Vec2.fromArray)
+    ))
     sceneData.walkable.holes.forEach(
       h => walkablePoly.addHole(new SimplePolygon(h.map(Vec2.fromArray)))
     )
     this.walkable = new WalkableArea(walkablePoly)
 
-    const walkbehindPoly = new Polygon(new SimplePolygon(sceneData.walkbehind.bounds.map(
-      Vec2.fromArray
-    )))
+    const walkbehindPoly = new Polygon(new SimplePolygon(
+      sceneData.walkbehind.bounds.map(Vec2.fromArray)
+    ))
     sceneData.walkbehind.holes.forEach(
       h => walkbehindPoly.addHole(new SimplePolygon(h.map(Vec2.fromArray)))
     )
@@ -83,7 +88,6 @@ export default class Scene {
     this.camera = new Camera(this.world)
     this.stage.addChild(this.camera.container)
 
-
     // Dev, vis graph
     g = new PIXI.Graphics()
     g.lineStyle(1, 0x000000, 0.7)
@@ -103,21 +107,24 @@ export default class Scene {
     }
     this.disposables = []
 
-    // set up listeners
     const bgInteraction = new IA(this.background)
 
     this.devWalkPath = new PIXI.Graphics()
     this.world.addChild(this.devWalkPath)
 
-    // addListener returns an unsubscribe function
-    this.disposables.push(bgInteraction.addListener('mousedown', ::this.handleMouseDown))
-    this.disposables.push(bgInteraction.addListener('mousemove', ::this.handleMouseMove))
+    // addListener returns a disposable
+    this.disposables.push(
+      bgInteraction.addListener('mousedown', ::this.handleMouseDown)
+    )
+    this.disposables.push(
+      bgInteraction.addListener('mousemove', ::this.handleMouseMove)
+    )
   }
 
   handleMouseDown(e) {
     const click = e.getPos(this.world)
-    const x = Math.floor(click.x)
-    const y = Math.floor(click.y)
+    const x = click.x
+    const y = click.y
     const mousePos = new Vec2(x, y)
     const ps = this.walkable.polygon.points
 
@@ -131,6 +138,20 @@ export default class Scene {
     this.mainChar.moveQueue = walkPath.slice(1).map(n => n.pos)
     this.mainChar.moveTarget = null
 
+  }
+
+  handleMouseMove(e) {
+    const click = e.getPos(this.world)
+    const x = click.x
+    const y = click.y
+
+    const toPos = this.walkable.polygon.nearestInside(new Vec2(x, y))
+    const fromPos = this.walkable.polygon.nearestInside(this.mainChar.pos())
+    const walkPath = this.walkable.findPath(
+      new Node(fromPos),
+      new Node(toPos)
+    )
+
     // Dev
     if (walkPath.length) {
       let way = walkPath
@@ -141,11 +162,5 @@ export default class Scene {
         this.devWalkPath.lineTo(way[i+1].pos.x, way[i+1].pos.y)
       }
     }
-  }
-
-  handleMouseMove(e) {
-    const click = e.getPos(this.world)
-    const x = Math.floor(click.x)
-    const y = Math.floor(click.y)
   }
 }
