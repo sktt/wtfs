@@ -1,8 +1,11 @@
 import T from './types'
 import React from 'react'
 import ReactDOM from 'react-dom'
-import {Line2, Polygon, SimplePolygon, Vec2} from '../../algebra'
+
+// Tool for manipulating polygons
 import PolygonTool from './path_editor/polygon_tool'
+
+import {Polygon} from '../../algebra'
 
 export default class PathEditor extends React.Component {
   static propTypes = {
@@ -30,14 +33,14 @@ export default class PathEditor extends React.Component {
     this._makePolygon(props)
   }
   render() {
-    const bounds = this.props.data.walkable.bounds
     const bgScale = this.props.data.bg.scale
     const editorScale = this.props.editorScale
-    const viewBox = `0 0 ${this.props.textureWidth * bgScale} ${this.props.textureHeight * bgScale}`
-
-    const hoverIndex = this.state.hoverIndex
-    const activeIndex = this.state.activeIndex
-    const previewHole = this.state.previewHole
+    const viewBox = [
+      '0',
+      '0',
+      this.props.textureWidth * bgScale,
+      this.props.textureHeight * bgScale
+    ].join(' ')
 
     return (
       <svg
@@ -57,14 +60,10 @@ export default class PathEditor extends React.Component {
       </svg>
     )
   }
-  _makePolygon(props = this.props) {
-    const p = new Polygon(new SimplePolygon(props.data.walkable.bounds.map(Vec2.fromArray)))
 
-    props.data.walkable.holes.forEach(
-      h => p.addHole(new SimplePolygon(h.map(Vec2.fromArray)))
-    )
+  _makePolygon(props = this.props) {
     this.setState({
-      polygon: p
+      polygon: Polygon.fromSerialized(props.data.walkable)
     })
   }
 }

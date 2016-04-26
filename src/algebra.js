@@ -1,6 +1,21 @@
 /*@flow*/
 import pibp from 'point-in-big-polygon'
 
+// Serialized point
+type SerializedPoint = [number, number]
+
+// Serialized points
+type SerializedPoints = Array<SerializedPoint>
+
+// Serialized SimplePolygon type
+type SerializedSimplePolygon = SerializedPoints
+
+// Serialized polygon
+type SerializedPolygon = {
+  bounds: SerializedSimplePolygon,
+  holes: Array<SerializedSimplePolygon>
+}
+
 export class Vec2 {
   x: number;
   y: number;
@@ -133,7 +148,7 @@ export class SimplePolygon {
     this.points = points
   }
 
-  serialize(): [[number, number]] {
+  serialize(): SerializedSimplePolygon {
     return this.points.map(
       vec => vec.arr()
     )
@@ -223,6 +238,10 @@ export class SimplePolygon {
     })
     return nearest
   }
+
+  static fromSerialized(bounds: SerializedSimplePolygon): SimplePolygon {
+    return new SimplePolygon(bounds.map(Vec2.fromArray))
+  }
 }
 
 // Extended polygon that supports holes
@@ -244,19 +263,15 @@ export class Polygon {
   }
 
   updateClassifier() {
-    this.classifyPoint = pibp(this.getLoops())
+    const {bounds, holes} = this.serialize()
+    this.classifyPoint = pibp([bounds].concat(holes || []))
   }
 
-  serialize(): {} {
+  serialize(): SerializedPolygon {
     return {
       bounds: this.bounds.serialize(),
       holes: this.interior.map(hole => hole.serialize())
     }
-  }
-
-  getLoops() {
-    const {bounds, holes} = this.serialize()
-    return [bounds].concat(holes || [])
   }
 
   addHole(polygon: SimplePolygon): void {
@@ -329,4 +344,17 @@ export class Polygon {
 
     return this.nearestEdgePoint(point)
   }
+
+  static fromSerialized({bounds, holes}: SerializedPolygon): Polygon {
+    const instance = new Polygon(SimplePolygon.fromSerialized(bounds))
+
+    holes
+      // deserialize every hole
+      .map(SimplePolygon.fromSerialized)
+      // add hole. Maybe constructor should take holes..
+      .forEach(::instance.addHole)
+
+    return instance
+  }
 }
+

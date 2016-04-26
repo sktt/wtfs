@@ -15,6 +15,7 @@ const obsResize = Rx.Observable.merge(
   Rx.Observable.fromEvent(window, 'resize')
 )
 .map(() => [window.innerWidth, window.innerHeight])
+.publish().refCount() // make hot
 
 // keep any current subscription here and dispose when necessary
 let subscription = null
