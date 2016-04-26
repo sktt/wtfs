@@ -1,5 +1,5 @@
 import {drawPolygon} from './pixi_draw_utils'
-import {VisibilityGraph, dijkstra} from '../graph'
+import {VisibilityGraph, astar} from '../graph'
 
 export default class WalkableArea {
   constructor(polygon) {
@@ -23,7 +23,7 @@ export default class WalkableArea {
     this.visGraph.connectNode(from)
     this.visGraph.connectNode(to)
 
-    const path = dijkstra(from, to)
+    const path = astar(from, to)
 
     this.visGraph.unlinkNode(from)
     this.visGraph.unlinkNode(to)

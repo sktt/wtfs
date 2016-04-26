@@ -1,7 +1,7 @@
 /*@flow*/
 import {Polygon, Vec2, Line2} from './algebra'
 
-export function dijkstra(start: Node, end: Node): Node[] {
+export function astar(start: Node, end: Node): Node[] {
   const heuristic = (a: Node, b: Node): number => a.pos.dist(b.pos)
 
   let closedSet: Node[] = []
@@ -21,7 +21,13 @@ export function dijkstra(start: Node, end: Node): Node[] {
   fScore.get = (key: Node): number => fScore.has(key) ? Map.prototype.get.call(fScore, key) : Infinity
 
   while (openSet.length > 0) {
-    let current = openSet.shift()
+    // Order by estimate distance
+    let current = openSet.sort((n1, n2) => {
+      let a = fScore.get(n1)
+      let b = fScore.get(n2)
+      return a > b ? 1 : a < b ? -1 : 0
+    }).shift()
+
     if (current === end) {
       let t = end
       let path = [t]
@@ -34,7 +40,7 @@ export function dijkstra(start: Node, end: Node): Node[] {
     closedSet = closedSet.concat(current)
     current.neighbours
       // Neighbour must not already be visited
-      .filter((e) => closedSet.indexOf(e.to) === -1)
+      .filter((e) => !~closedSet.indexOf(e.to))
       .forEach((e) => {
         const tgscore = gScore.get(current) + e.weight
         if(!~openSet.indexOf(e.to)) {
@@ -43,11 +49,9 @@ export function dijkstra(start: Node, end: Node): Node[] {
           return
         }
         cameFrom.set(e.to, current)
-        gScore.set(e.to, gScore.get(current) + e.weight)
-        fScore.set(e.to, gScore.get(e.to) + heuristic(e.to, end))
+        gScore.set(e.to, tgscore)
+        fScore.set(e.to, tgscore + heuristic(e.to, end))
       })
-    // Order by estimate distance
-    openSet = openSet.sort((n1, n2) => fScore.get(n1) > fScore.get(n2))
   }
 
   // no shortest path :(
@@ -142,7 +146,7 @@ export class VisibilityGraph {
         ([l1, _]) => {
           const len = l1.len()
           const dir = l1.dir()
-          // getting a whole bunch of points to avoid nasty float point errors
+          // getting a whole bunch of points to avoid nasty float errors
           for(let i = 1; i < 5; i++) {
             if(this.polygon.contains(l1.a.add(dir.scale(i * len/5)))) {
               return true
