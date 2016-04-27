@@ -1,53 +1,46 @@
-import Rx from 'rx-dom'
+import {Observable} from 'rx-dom'
 import PIXI from 'pixi.js'
 
-import obsRenderer from '../renderer'
-import obsTick from '../ticker'
 import config from '../config'
-
 import Scene from './scene'
+import common from '../common'
+
+// just a namespace for observers
+const obs = {}
+
+const renderer = (function () {
+  const r = new PIXI.WebGLRenderer(config.size.x, config.size.y, {
+    antialias: true
+  })
+  r.plugins.interaction.destroy()
+  delete r.plugins.interaction
+  return r
+}())
+
+common.obs.domRoot.subscribe(body => {
+  body.appendChild(renderer.view)
+})
+
+common.obs.resize.subscribe(([x, y]) => {
+  renderer.view.style.height = `${config.size.y * (x / config.size.x)}px`
+})
 
 export default (sceneData) => {
-  document.body.style.backgroundColor = '#000'
-  document.body.style.display = 'flex'
-  document.body.style.justifyContent = 'center'
-  document.body.style.height = '100%'
-  document.body.style.margin = '0'
-  document.body.style.flexDirection = 'column'
-  document.body.parentNode.style.height = '100%'
-  const l = PIXI.loader
-  Object.keys(sceneData.assets).forEach(
-    key => l.add(key, sceneData.assets[key])
-  )
-
-  const obsResources = Rx.Observable
-    .fromCallback(l.load, l, (_, resources) => resources)()
-
-  const obsResize = Rx.Observable
-    .merge(
-      Rx.Observable.just(),
-      Rx.Observable.fromEvent(window, 'resize')
-    )
-    .map(() => [window.innerWidth, window.innerHeight])
-
-  obsRenderer.subscribe(renderer => {
-    document.body.appendChild(renderer.view)
-    obsResize.subscribe(([x, y]) => {
-      renderer.view.style.height = `${config.size.y * (x / config.size.x)}px`
-    })
+  obs.resources = common.create.resources(PIXI.loader, sceneData.assets)
+  obs.scene = obs.resources.map(resources => {
+    const s = new Scene(resources, config.size, sceneData)
+    s.initListeners()
+    return s
   })
+  .publish()
+  .refCount()
 
-  const obsScene = obsResources
-    .map(resources => new Scene(resources, config.size, sceneData))
-    .publish()
-    .refCount()
-
-  obsScene.subscribe(scene => scene.initListeners())
-
-  Rx.Observable
-    .combineLatest(obsRenderer, obsTick, obsResize, obsScene)
-    .subscribe(([renderer, dt, dims, scene]) => {
-      scene.update(dt)
-      renderer.render(scene.stage)
-    })
+  Observable.combineLatest(
+    common.obs.tick,
+    common.obs.resize,
+    obs.scene
+  ).subscribe(([dt, dims, scene]) => {
+    scene.update(dt)
+    renderer.render(scene.stage)
+  })
 }
