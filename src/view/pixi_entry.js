@@ -39,19 +39,15 @@ export default (sceneData) => {
 
   const obsScene = obsResources
     .map(resources => new Scene(resources, config.size, sceneData))
+    .publish()
+    .refCount()
 
-  let myScene = null
-  obsScene.subscribe(scene => {
-    myScene = scene
-    scene.initListeners()
-  })
+  obsScene.subscribe(scene => scene.initListeners())
 
   Rx.Observable
-    .combineLatest(obsRenderer, obsTick, obsResize)
-    .subscribe(([renderer, dt, dims]) => {
-      if(myScene) {
-        myScene.update(dt)
-        renderer.render(myScene.stage)
-      }
+    .combineLatest(obsRenderer, obsTick, obsResize, obsScene)
+    .subscribe(([renderer, dt, dims, scene]) => {
+      scene.update(dt)
+      renderer.render(scene.stage)
     })
 }
