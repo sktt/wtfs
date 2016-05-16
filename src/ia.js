@@ -17,6 +17,7 @@ const toSyntheticEvent = function(e) {
 
 // todo: why added events to this emitted canvas
 // not working ????
+// because its a cold obs
 const enteringCanvas =
   Rx.DOM.fromMutationObserver(document.body, {
     childList: true,

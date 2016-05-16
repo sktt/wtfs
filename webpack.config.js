@@ -17,11 +17,11 @@ module.exports = {
   cache: 'true',
   entry: {
     main: (!opts.hmr ? [] : [
-      'webpack-dev-server/client?http://localhost:8080',
+      'webpack-dev-server/client?http://localhost:8090',
       'webpack/hot/dev-server',
     ]).concat(`${SRC_PATH}/main.js`),
     levdev: (!opts.hmr ? [] : [
-      'webpack-dev-server/client?http://localhost:8080',
+      'webpack-dev-server/client?http://localhost:8090',
       'webpack/hot/dev-server',
     ]).concat( `${SRC_PATH}/levdev/main.js`)
   },

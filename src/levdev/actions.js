@@ -12,6 +12,14 @@ export default {
     emitter.emit('update_state_walkable', walkable)
   },
 
+  updateAssets(assets) {
+    emitter.emit('update_state_assets', assets)
+  },
+
+  updateMainChar(mainChar) {
+    emitter.emit('update_state_mainChar', mainChar)
+  },
+
   // reset last state to default and save
   reset() {
     emitter.emit('reset_state')

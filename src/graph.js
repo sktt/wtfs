@@ -22,11 +22,7 @@ export function astar(start: Node, end: Node): Node[] {
 
   while (openSet.length > 0) {
     // Order by estimate distance
-    let current = openSet.sort((n1, n2) => {
-      let a = fScore.get(n1)
-      let b = fScore.get(n2)
-      return a > b ? 1 : a < b ? -1 : 0
-    }).shift()
+    let current = openSet.sort((n1, n2) => fScore.get(n1) - fScore.get(n2)).shift()
 
     if (current === end) {
       let t = end

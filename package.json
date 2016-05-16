@@ -5,7 +5,7 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "start": "./node_modules/.bin/webpack-dev-server --hot",
+    "start": "./node_modules/.bin/webpack-dev-server --hot --port=8090",
     "test": "babel-tape-runner test/**/*.js | tap-spec"
   },
   "author": "",
@@ -31,10 +31,10 @@
     "webpack-dev-server": "^1.14.1"
   },
   "dependencies": {
-    "pixi.js": "^3.0.8",
+    "pixi.js": "^3.0.11",
     "react": "^0.14.7",
     "react-dom": "^0.14.7",
-    "rx": "^4.0.7",
+    "rx": "^4.1.0",
     "rx-dom": "^7.0.3"
   }
 }

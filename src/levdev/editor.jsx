@@ -5,6 +5,9 @@ import React from 'react'
 import CameraEditor from './react/camera_editor'
 import PathEditor from './react/path_editor'
 import WorldEditor from './react/world_editor'
+import CharEditor from './react/char_editor'
+import AssetEditor from './react/asset_editor'
+import ScenePreview from './react/scene_preview'
 
 import Actions from './actions'
 
@@ -25,20 +28,61 @@ export default class Editor extends React.Component {
   }
 
   editors = {
-    camera: _ => <CameraEditor
-      textureWidth={this.props.scene.background.texture.width}
-      textureHeight={this.props.scene.background.texture.height}
-      data={this.props.data}
-    />,
-    walkable: _ => <PathEditor
-      textureHeight={this.props.scene.background.texture.height}
-      textureWidth={this.props.scene.background.texture.width}
-      editorScale={Editor.SCALE}
-      data={this.props.data}
-    />,
-    world: _ => <WorldEditor
-      data={this.props.data}
-    />
+    camera: _ => (
+      <div>
+        <ScenePreview
+          editorScale={Editor.SCALE}
+          size={config.size}
+          data={this.props.data}
+          scene={this.props.scene}
+        />
+        <CameraEditor
+          textureWidth={this.props.scene.background.texture.width}
+          textureHeight={this.props.scene.background.texture.height}
+          data={this.props.data}
+        />
+      </div>
+    ),
+    walkable: _ => (
+      <div>
+        <ScenePreview
+          editorScale={Editor.SCALE}
+          size={config.size}
+          data={this.props.data}
+          scene={this.props.scene}
+        />
+        <PathEditor
+          textureHeight={this.props.scene.background.texture.height}
+          textureWidth={this.props.scene.background.texture.width}
+          editorScale={Editor.SCALE}
+          data={this.props.data}
+        />
+      </div>
+    ),
+    world: _ => (
+      <div>
+        <ScenePreview
+          editorScale={Editor.SCALE}
+          size={config.size}
+          data={this.props.data}
+          scene={this.props.scene}
+        />
+
+        <WorldEditor
+          data={this.props.data}
+        />
+      </div>
+    ),
+    assets: _ => (
+      <AssetEditor
+        assets={this.props.data.assets}
+      />
+    ),
+    character: _ => (
+      <CharEditor
+        data={this.props.data}
+      />
+    )
   }
 
   componentWillMount() {
@@ -62,24 +106,6 @@ export default class Editor extends React.Component {
         <div className="editor__stage" style={{
           position: 'relative'
         }}>
-          <img style={{
-            height: this.props.scene.background.texture.height * Editor.SCALE * bgScale,
-            margin: '0 auto',
-            opacity: 0.7
-          }} src={bgURL}/>
-          <div style={{
-            // In camera sight
-            position: 'absolute',
-            backgroundImage: `url(${bgURL})`,
-            backgroundPosition: `${this.props.data.world.pos[0]}px ${this.props.data.world.pos[1]}px`,
-            backgroundRepeat: 'no-repeat',
-            backgroundSize: bgScale * this.props.scene.background.texture.width,
-            left: -this.props.data.world.pos[0],
-            top: -this.props.data.world.pos[1],
-            width: config.size.x,
-            height: config.size.y,
-            zoom: Editor.SCALE
-          }} />
           {currentEditor}
         </div>
         <select value={this.state.currEditor} onChange={::this.handleEditorChange}>

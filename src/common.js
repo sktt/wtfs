@@ -59,11 +59,9 @@ obs.domReady = Observable
  * Emits window size
  */
 obs.resize = Observable
-  .merge(
-    Observable.just(),
-    Observable.fromEvent(window, 'resize')
-  )
+  .fromEvent(window, 'resize')
   .map(_ => [window.innerWidth, window.innerHeight])
+  .publishValue([window.innerWidth, window.innerHeight])
 
 /**
  * Emits root dom node when it's ready
@@ -87,20 +85,23 @@ obs.domRoot = obs.domReady.flatMap(Observable
 .publish()
 .refCount()
 
+const delta = last => curr => {
+  const dt = Math.max(0, curr - last)
+  last = curr
+  return dt
+}
+
 /**
  * Emits on every frame with delta time
  */
 obs.tick = Observable.create(observer => {
   let requestId
-  let startTime = Date.now()
-  const callback = (currentTime) => {
+  const callback = currentTime => {
     // If we have not been disposed, then request the next frame
     if (requestId) {
       requestId = window.requestAnimationFrame(callback)
     }
-
-    observer.onNext(Math.max(0, currentTime - startTime))
-    startTime = currentTime
+    observer.onNext(currentTime)
   }
 
   requestId = window.requestAnimationFrame(callback)
@@ -113,5 +114,6 @@ obs.tick = Observable.create(observer => {
     }
   }
 })
+.map(delta(performance.now()))
 
 export default {create, obs}
