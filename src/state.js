@@ -89,16 +89,9 @@ const DEFAULT_STATE = {
 }
 
 
-if(!localStorage.getItem('3dsh:last_state')) {
+if (!localStorage.getItem('3dsh:last_state')) {
   localStorage.setItem('3dsh:last_state', JSON.stringify(DEFAULT_STATE))
 }
-
-Rx.Observable
-  .fromEvent(emitter, 'save_state')
-  .flatMap(_ => State)
-  .subscribe(
-    s => localStorage.setItem('3dsh:last_state', JSON.stringify(s))
-  )
 
 const State = Rx.Observable
   .just(JSON.parse(localStorage.getItem('3dsh:last_state')))
@@ -107,18 +100,23 @@ const State = Rx.Observable
     _ => DEFAULT_STATE
   ))
 
-export default State.merge(
-    Rx.Observable.fromEvent(emitter, 'update_state_walkable').withLatestFrom(
-      State, (walkable, state) => ({...state, walkable})
-    )
+Rx.Observable.merge(
+  Rx.Observable.fromEvent(emitter, 'update_state_walkable').withLatestFrom(
+    State, (walkable, state) => ({...state, walkable})
+  ),
+  Rx.Observable.fromEvent(emitter, 'update_state_assets').withLatestFrom(
+    State, (assets, state) => ({...state, assets})
+  ),
+  Rx.Observable.fromEvent(emitter, 'update_state_mainChar').withLatestFrom(
+    State, (mainChar, state) => ({...state, mainChar})
   )
-  .merge(
-    Rx.Observable.fromEvent(emitter, 'update_state_assets').withLatestFrom(
-      State, (assets, state) => ({...state, assets})
-    )
+).subscribe(state => emitter.emit('update_state', state))
+
+Rx.Observable
+  .fromEvent(emitter, 'save_state')
+  .withLatestFrom(State, (_, state) => state)
+  .subscribe(
+    s => localStorage.setItem('3dsh:last_state', JSON.stringify(s))
   )
-  .merge(
-    Rx.Observable.fromEvent(emitter, 'update_state_mainChar').withLatestFrom(
-      State, (mainChar, state) => ({...state, mainChar})
-    )
-  )
+
+export default State;
