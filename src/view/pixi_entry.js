@@ -8,14 +8,14 @@ import common from '../common'
 // just a namespace for observers
 const obs = {}
 
-const renderer = (function () {
+const renderer = (_ => {
   const r = new PIXI.WebGLRenderer(config.size.x, config.size.y, {
     antialias: true
   })
   r.plugins.interaction.destroy()
   delete r.plugins.interaction
   return r
-}())
+})()
 
 common.obs.domRoot.subscribe(body => {
   body.appendChild(renderer.view)

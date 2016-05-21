@@ -1,7 +1,7 @@
 import T from './react/types'
 
 import config from '../config'
-import React from 'react'
+import React, {PropTypes} from 'react'
 import CameraEditor from './react/camera_editor'
 import PathEditor from './react/path_editor'
 import WorldEditor from './react/world_editor'
@@ -16,7 +16,7 @@ const capitalize = (str) => String.fromCharCode(str.charCodeAt(0) - 32) + str.sl
 export default class Editor extends React.Component {
   static propTypes = {
     data: T.data.isRequired,
-    scene: React.PropTypes.object.isRequired
+    resources: PropTypes.object
   }
   static SCALE = 0.3
 
@@ -34,11 +34,11 @@ export default class Editor extends React.Component {
           editorScale={Editor.SCALE}
           size={config.size}
           data={this.props.data}
-          scene={this.props.scene}
+          resources={this.props.resources}
         />
         <CameraEditor
-          textureWidth={this.props.scene.background.texture.width}
-          textureHeight={this.props.scene.background.texture.height}
+          textureWidth={this.props.resources[this.props.data.bg.asset].texture.width}
+          textureHeight={this.props.resources[this.props.data.bg.asset].texture.height}
           data={this.props.data}
         />
       </div>
@@ -49,11 +49,11 @@ export default class Editor extends React.Component {
           editorScale={Editor.SCALE}
           size={config.size}
           data={this.props.data}
-          scene={this.props.scene}
+          resources={this.props.resources}
         />
         <PathEditor
-          textureHeight={this.props.scene.background.texture.height}
-          textureWidth={this.props.scene.background.texture.width}
+          textureWidth={this.props.resources[this.props.data.bg.asset].texture.width}
+          textureHeight={this.props.resources[this.props.data.bg.asset].texture.height}
           editorScale={Editor.SCALE}
           data={this.props.data}
         />
@@ -65,7 +65,7 @@ export default class Editor extends React.Component {
           editorScale={Editor.SCALE}
           size={config.size}
           data={this.props.data}
-          scene={this.props.scene}
+          resources={this.props.resources}
         />
 
         <WorldEditor
@@ -87,7 +87,7 @@ export default class Editor extends React.Component {
 
   componentWillMount() {
     // no state -> reset
-    if(__DEV__ && Editor.propTypes.data(this.props, 'data', 'Editor', 'prop', 'data') instanceof Error)  {
+    if(__DEV__ && Editor.propTypes.data(this.props, 'data', 'Editor', 'prop', 'data') instanceof Error) {
       Actions.reset()
       Actions.save()
     }

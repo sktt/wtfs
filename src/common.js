@@ -61,7 +61,7 @@ obs.domReady = Observable
 obs.resize = Observable
   .fromEvent(window, 'resize')
   .map(_ => [window.innerWidth, window.innerHeight])
-  .publishValue([window.innerWidth, window.innerHeight])
+  .shareValue([window.innerWidth, window.innerHeight])
 
 /**
  * Emits root dom node when it's ready
