@@ -5,8 +5,8 @@ import React, {PropTypes} from 'react'
 import CameraEditor from './react/camera_editor'
 import PathEditor from './react/path_editor'
 import WorldEditor from './react/world_editor'
-import CharEditor from './react/char_editor'
-import AssetEditor from './react/asset_editor'
+import AnimEditor from './react/anim_editor/index'
+import AssetEditor from './react/asset_editor/index'
 import ScenePreview from './react/scene_preview'
 
 import Actions from './actions'
@@ -78,8 +78,8 @@ export default class Editor extends React.Component {
         assets={this.props.data.assets}
       />
     ),
-    character: _ => (
-      <CharEditor
+    animations: _ => (
+      <AnimEditor
         data={this.props.data}
       />
     )
